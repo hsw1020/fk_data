@@ -1,5 +1,5 @@
 import configparser
-import json
+import json,time
 from logging import exception
 from flask import Blueprint
 from db_class import *
@@ -110,26 +110,29 @@ def list():
         }
     fs_list=[]
     data_list=[]
-    pp_list=mxk_value.query.all()
+    pp_list=mxk_value.query.order_by(mxk_value.update_time.desc()).all()
     for pp in pp_list:
         field_v=pp.field
         scope_v=pp.scope
-        fs=field_v+scope_v
-        if fs not in fs_list:
+        year_v=pp.year
+        fs_year=field_v+scope_v+year_v
+        if fs_year not in fs_list:
             data_list.append(pp)
-            fs_list.append(fs)
+            fs_list.append(fs_year)
     for data in data_list:
         #id_v=data.id
         field_v=data.field
         scope_v=data.scope
         update_by_v=data.update_by
         update_time_v=data.update_time
+        year_v=data.year
         row={
             #'id':id_v,
             'field':field_v,
             'scope':scope_v,
             'update_by':update_by_v,
-            'update_time':update_time_v
+            'update_time':update_time_v,
+            'year':year_v
         }
         json_row['data'].append(row)
     json_row=jsonify(json_row)
@@ -143,11 +146,14 @@ def dan_edit():
     col_name=request.form['col_name']
 
     new_value=request.form['new_value']
+    updateTime=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     try:
         mxk_value1= mxk_value.query.filter_by(id=int(id_v)).first()
         #动态赋值
         setattr(mxk_value1,col_name,new_value)
-
+        mxk_value1.update_time=updateTime
+        mxk_value1.update_by='user2'
+        
         db.session.commit()
         result = {
             'status':'ok'
