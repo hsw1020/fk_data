@@ -3,6 +3,7 @@ from operator import imod
 import os
 from data_manage import data_manage
 from login_mmm import login_mmm
+from calculate_manage import calculate_manage
 #
 from token_required import login_r
 from flask import g
@@ -247,7 +248,7 @@ def json_show():
 
 
 @app.route('/mxk/indicator/query/list/')
-@login_r #必须登录的装饰器校验
+#@login_r #必须登录的装饰器校验
 def list_show():
     data_list=[]
     data_dict={'data':[]}
@@ -306,9 +307,9 @@ def edit_indicator():
 
             #print(pp)
             
-            #while not pp:
-            #    db.session.commit()
-            #    pp=mxk_indicator_json.query.filter_by(scope=scope_v,field=field_v).first()
+            while not pp:
+                db.session.commit()
+                pp=mxk_indicator_json.query.filter_by(scope=scope_v,field=field_v).first()
                 
             indicator_system_json=pp.indicator_system
             json_row=[{'indicator_system':json.dumps(indicator_system_json)}]
@@ -610,6 +611,7 @@ def add_indicator():
 
     
 if __name__ == '__main__':
+    app.register_blueprint(calculate_manage,url_prefix='/calculate_manage')
     app.register_blueprint(data_manage,url_prefix='/data_manage')
     app.register_blueprint(login_mmm,url_prefix='/login_mmm')
     app.run(port=9095,host='0.0.0.0')

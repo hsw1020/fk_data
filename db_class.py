@@ -78,3 +78,20 @@ class Users(db.Model):
 
 
 
+
+
+class mxk_measure(db.Model):
+    __tablename__ = 'tjk_indicator_measure'
+
+    id= db.Column(db.Integer,primary_key=True)
+    field = db.Column(db.String(255),nullable=False,unique=True)
+    scope = db.Column(db.String(255),nullable=False,unique=True)
+    year = db.Column(db.String(255),nullable=False,unique=True)
+    indicator_id = db.Column(db.String(255),nullable=False,unique=True)
+    indicator_name = db.Column(db.String(255),nullable=False,unique=True)
+    region_code = db.Column(db.String(255),nullable=False,unique=True)
+    score = db.Column(db.String(255),nullable=False,unique=True)
+    eva_level = db.Column(db.String(255),nullable=False,unique=True)
+    org_id = db.Column(db.String(255),nullable=False,unique=True)
+    org_name = db.Column(db.String(255),nullable=False,unique=True)
+    create_time= db.Column(db.DateTime,nullable=False,unique=True)
