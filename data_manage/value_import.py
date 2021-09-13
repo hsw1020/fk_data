@@ -14,10 +14,7 @@ cf.read("conf.ini")
 mysql_uri = cf.get("mysql", "uri")
 
 # In[154]:
-engine=create_engine(mysql_uri)
-data_dict_region=pd.read_sql_table('dict_region',engine)
-data_dict_org=pd.read_sql_table('dict_org',engine)
-data_mxk_indicator_system=pd.read_sql_table('mxk_indicator_system',engine)
+
 
 
 def public_part(data):
@@ -64,7 +61,7 @@ def public_col(data_,year,user_name):
 # In[169]:
 
 
-def nation(data_nation,year,field,scope,user_name):
+def nation(data_nation,year,field,scope,user_name,data_dict_region,data_mxk_indicator_system,engine):
 #     list_1=[]
 #     list_col=data_nation.columns.tolist()
 #     for i in range(data_nation.shape[0]):
@@ -94,14 +91,14 @@ def nation(data_nation,year,field,scope,user_name):
     #data_nation_1.to_excel('2aa.xlsx')
     data_nation_1['eva_level']=None
     data_nation_1['org_name']=None
-    result=input_table(data_nation_1_)
+    result=input_table(data_nation_1_,engine)
     return result
 
 
 # In[170]:
 
 
-def org(data_org,data_dict_region,year,field,scope,user_name):
+def org(data_org,data_dict_region,year,field,scope,user_name,data_dict_org,data_mxk_indicator_system):
 #     list_2=[]
 #     list_col=data_org.columns.tolist()
 #     for i in range(data_org.shape[0]):
@@ -147,7 +144,7 @@ def org(data_org,data_dict_region,year,field,scope,user_name):
 # In[171]:
 
 
-def input_table(table):
+def input_table(table,engine):
     # table.to_sql('tjk_indicator_measure_20210809',engine,if_exists='append',index=False)
     try:
         table.to_sql('tjk_indicator_value',engine,if_exists='append',index=False)
@@ -167,8 +164,11 @@ def input_table(table):
 def gao(path,year,field,scope,user_name):
     
     # engine=create_engine('mysql+pymysql://root:12345.zcf@localhost/fjkz')
-    
-    
+    engine=create_engine(mysql_uri)
+    data_dict_region=pd.read_sql_table('dict_region',engine)
+    data_dict_org=pd.read_sql_table('dict_org',engine)
+    data_mxk_indicator_system=pd.read_sql_table('mxk_indicator_system',engine)
+
     #path=r'D:\work\数据添加\部署\mxk_value\value_media_nation_2021.xlsx'
     #year='2021'
     #field='媒体力量'
@@ -176,8 +176,8 @@ def gao(path,year,field,scope,user_name):
     #user_name='张冲锋'
     if path.find('nation')>0:
         data_nation=pd.read_excel(path)
-        result=nation(data_nation,year,field,scope,user_name)
+        result=nation(data_nation,year,field,scope,user_name,data_dict_region,data_mxk_indicator_system,engine)
     elif path.find('org')>0:
         data_org=pd.read_excel(path)
-        result=org(data_org,data_dict_region,year,field,scope,user_name)
+        result=org(data_org,data_dict_region,year,field,scope,user_name,data_dict_org,data_mxk_indicator_system)
     return result

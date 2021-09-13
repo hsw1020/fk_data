@@ -43,6 +43,7 @@ def login():
         result={
             'status':'未找到该用户'
         }
+        code_fan=401
     else:    
         if obj.verify_password(password):
             token = create_token(username)
@@ -51,9 +52,10 @@ def login():
                 'status':'登录成功',
                 'token':token
             }
-            
+            code_fan=200
         else:
             result={
                 'status':'密码错误'
             }
-    return result
+            code_fan=402
+    return jsonify(code=code_fan,msg=result)

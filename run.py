@@ -1,10 +1,10 @@
 import configparser
 from operator import imod
 import os
-from data_manage import data_manage
 from login_mmm import login_mmm
 from calculate_manage import calculate_manage
 #
+from data_manage.data_manage import data_manage
 from token_required import login_r
 from flask import g
 from flask import Flask
@@ -43,7 +43,7 @@ def Response_headers(content):
 
 import pymysql
 pymysql.install_as_MySQLdb()
-import excel_2_sql
+import excel_2_sql0
 cf = configparser.ConfigParser()
 cf.read("conf.ini")
 mysql_uri = cf.get("mysql", "uri")
@@ -306,11 +306,12 @@ def edit_indicator():
             pp=mxk_indicator_json.query.filter_by(scope=scope_v,field=field_v).first()
 
             #print(pp)
-            
-            while not pp:
+            nn=1
+            while not pp and nn<10:
                 db.session.commit()
                 pp=mxk_indicator_json.query.filter_by(scope=scope_v,field=field_v).first()
-                
+                time.sleep(0.5)
+                nn+=1
             indicator_system_json=pp.indicator_system
             json_row=[{'indicator_system':json.dumps(indicator_system_json)}]
             json_row=jsonify(json_row)
@@ -322,9 +323,12 @@ def edit_indicator():
                 pp_id_max=Mxk_indicator_system.query.order_by(Mxk_indicator_system.indicator_id.desc()).first().indicator_id
             except:
                 pp=mxk_indicator_json.query.filter_by(scope=scope_v,field=field_v).first()
-                while not pp:
+                nn=1
+                while not pp and nn<10:
                     db.session.commit()
                     pp=mxk_indicator_json.query.filter_by(scope=scope_v,field=field_v).first()
+                    time.sleep(0.5)
+                    nn+=1
                 indicator_system_json=pp.indicator_system
                 pp_id_max=find_id_max(indicator_system_json,1)
             old_sys_list=Mxk_indicator_system.query.filter_by(scope=scope_v,field=field_v).all()
@@ -334,10 +338,12 @@ def edit_indicator():
             
             
             pp=mxk_indicator_json.query.filter_by(scope=scope_v,field=field_v).first()
-            while not pp:
+            nn2=1
+            while not pp and nn2<10:
                 db.session.commit()
                 pp=mxk_indicator_json.query.filter_by(scope=scope_v,field=field_v).first()
-
+                time.sleep(0.5)
+                nn2+=1
             indicator_system_json=pp.indicator_system
             data_list=[]
             
@@ -414,6 +420,7 @@ def add_indicator():
     if request.method=='GET':
         field_v = request.args.get('field')
         scope_v = request.args.get('scope')
+        create_by='user1'
         file_moren=file_dir+'moren/'
         file_list=os.listdir(file_moren)
         tar_file_name=file_moren+'model.xlsx'
@@ -434,14 +441,26 @@ def add_indicator():
             #sta = mysql_operation.delete_indicator_list(Condition)
             #返回结果给前端
             return "The old data exists"
-
-        data_list = excel_2_sql.add_2_sql(field_v,scope_v,file_path)
+        try:
+            dtest=excel_2_sql0.dtest(file_path)
+            if len(dtest)>0:
+                sta='出现重复指标项：{}'.format(dtest)
+                return jsonify(code=400,msg=sta) 
+            #data_list = excel_2_sql0.gao(field_v,scope_v,file_path)
+            data_list = excel_2_sql0.gao(file_path,args_field,args_scope,create_by)
+            if len(data_list)==0:
+                sta='file err!'
+                return jsonify(code=400,msg=sta) 
+        except:
+            sta='file err!'
+            return jsonify(code=400,msg=sta) 
         dd0=data_list[0]
         scope0=dd0[4]
         field0=dd0[1]
         pp=Mxk_indicator_system.query.filter_by(field=field0,scope=scope0).first()
         if pp:
             sta=='system data exist!'
+            return jsonify(code=400,msg=sta)
         else:
             n=1
             for dd in data_list:
@@ -506,15 +525,14 @@ def add_indicator():
 
         args = (request.form.to_dict())
         if args.get('field')  is None:
-            return "The parameter 'field' is missing  --  indicator/add/"
+            return jsonify(code=400,msg="The parameter 'field' is missing  --  indicator/add/")
         elif args.get('scope')  is None:
-            return "The parameter 'scope' is missing  --  indicator/add/"
+            return jsonify(code=400,msg="The parameter 'scope' is missing  --  indicator/add/") 
 
         #接收excle文件并保存到指定路径
         file = request.files.get('file')
         if file is None:
-            return "No files were received that needed to be uploaded"
-
+            return jsonify(code=400,msg="No files were received that needed to be uploaded") 
         file_path = file_dir+'mxk/' + file.filename
         #print(file,type(file),'/n',dir(file),'/n',request.files)
         #print(file.filename,type(file.filename))
@@ -528,6 +546,7 @@ def add_indicator():
         #arg["table"] = "json"
         args_field = args['field'].strip()
         args_scope = args['scope'].strip()
+        create_by='user1'
         #--------------------
         pp=mxk_indicator_json.query.filter_by(field=args_field,scope=args_scope).first()
 
@@ -537,8 +556,20 @@ def add_indicator():
             #sta = mysql_operation.delete_indicator_list(Condition)
             #返回结果给前端
             return "The old data exists"
-
-        data_list = excel_2_sql.add_2_sql(args['field'],args['scope'],file_path)
+        try:
+            dtest=excel_2_sql0.dtest(file_path)
+            if len(dtest)>0:
+                sta='出现重复指标项：{}'.format(dtest)
+                return jsonify(code=400,msg=sta) 
+            #data_list = excel_2_sql0.gao(field_v,scope_v,file_path)
+            data_list = excel_2_sql0.gao(file_path,args_field,args_scope,create_by)
+            #data_list = excel_2_sql.add_2_sql(args['field'],args['scope'],file_path)
+            if len(data_list) ==0:
+                sta='file err!'
+                return jsonify(code=400,msg=sta) 
+        except :
+            sta='file err!'
+            return jsonify(code=400,msg=sta) 
         dd0=data_list[0]
         scope0=dd0[4]
         field0=dd0[1]
@@ -600,9 +631,12 @@ def add_indicator():
 
         if sta == 'ok':
             sta = 'add successd'
+            return jsonify(code=200,msg=sta)
         else:
             sta =  'add failed'
-        return sta
+            return jsonify(code=400,msg=sta)
+        
+        
         #查询需要转存的数据
         
     
@@ -611,8 +645,9 @@ def add_indicator():
 
     
 if __name__ == '__main__':
-    app.register_blueprint(calculate_manage,url_prefix='/calculate_manage')
-    app.register_blueprint(data_manage,url_prefix='/data_manage')
-    app.register_blueprint(login_mmm,url_prefix='/login_mmm')
+    app.register_blueprint(calculate_manage,url_prefix='/mxk/calculate_manage')
+    app.register_blueprint(data_manage,url_prefix='/mxk/data_manage')
+    app.register_blueprint(login_mmm,url_prefix='/mxk/login_mmm')
+
     app.run(port=9095,host='0.0.0.0')
  

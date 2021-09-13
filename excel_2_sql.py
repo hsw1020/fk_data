@@ -113,10 +113,10 @@ if __name__ == '__main__':
     # engine=create_engine('mysql+pymysql://root:12345.zcf@localhost/fjkz')
     # path=r'C:\Users\admin\Desktop\指标体系相关\指标体系相关\1指标体系样例_媒体力量.xlsx'
 
-    engine=create_engine('mysql+pymysql://user_doc:MYSQL8_document@192.168.43.189:10306/new_schema')
-    path=r'/home/lz/python_workspace/MXK/20210809eva/test.xlsx'  #tree_media_country
-    field='媒体力量'
-    scope='周边国家'
+    engine=create_engine(mysql_uri)
+    path=r'D:\work\数据添加\Template.xlsx'  #tree_media_country
+    field='媒体力量33'
+    scope='周边国家33'
     add_2_sql(field,scope,path)
     # path=r'D:\20210809eva\tree_scale_country.xlsx'
     # field='规模结构'
