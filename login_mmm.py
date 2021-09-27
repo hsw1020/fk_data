@@ -14,6 +14,7 @@ from token_required import *
 def register():
     username = request.form.get('username')
     pwd = request.form.get('password')
+    create_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     user_exist=Users.query.filter_by(name=username).first()
     if user_exist:
         result ={
@@ -21,7 +22,7 @@ def register():
         }
     else:
         
-        user_add=Users(name=username)
+        user_add=Users(name=username,create_time=create_time)
         user_add.hash_password(pwd)
         db.session.add(user_add)
         db.session.commit()

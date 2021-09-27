@@ -1,5 +1,5 @@
 import configparser
-import json,time
+import json,time,os
 from logging import exception
 from flask import Blueprint
 from flask.helpers import make_response, send_from_directory
@@ -8,65 +8,15 @@ from flask import render_template,request,jsonify
 data_manage = Blueprint('data_manage',__name__)
 from .value_import import gao
 cf = configparser.ConfigParser()
-cf.read("./conf.ini")
+current_path = os.path.abspath(__file__)
+root_dir = os.path.abspath(os.path.dirname(current_path) + os.path.sep + "..")
+conf_dir=root_dir+"/conf.ini"
+cf.read(conf_dir)
 file_dir=cf.get("mysql", "file_path")
 
-country_dict={
-    '1':'美国',
-    '2':'俄罗斯',
-    '3':'台湾',
-    '4':'日本',
-    '5':'韩国',
-    '6':'朝鲜',
-    '7':'印度',
-    '8':'菲律宾',
-    '9':'越南',
-    '10':'中国',
-    '11':'澳大利亚',
-    '12':'孟加拉国',
-    '13':'文莱',
-    '14':'柬埔寨',
-    '15':'印度尼西亚',
-    '16':'老挝',
-    '17':'马来西亚',
-    '18':'蒙古',
-    '19':'缅甸',
-    '20':'尼泊尔',
-    '21':'新西兰',
-    '22':'巴基斯坦',
-    '23':'巴布亚新几内亚',
-    '24':'新加坡',
-    '25':'斯里兰卡',
-    '26':'泰国'
-}
-fan_country_dict={
-    '美国':'1',
-    '俄罗斯':'2',
-    '台湾':'3',
-    '日本':'4',
-    '韩国':'5',
-    '朝鲜':'6',
-    '印度':'7',
-    '菲律宾':'8',
-    '越南':'9',
-    '中国':'10',
-    '澳大利亚':'11',
-    '孟加拉国':'12',
-    '文莱':'13',
-    '柬埔寨':'14',
-    '印度尼西亚':'15',
-    '老挝':'16',
-    '马来西亚':'17',
-    '蒙古':'18',
-    '缅甸':'19',
-    '尼泊尔':'20',
-    '新西兰':'21',
-    '巴基斯坦':'22',
-    '巴布亚新几内亚':'23',
-    '新加坡':'24',
-    '斯里兰卡':'25',
-    '泰国':'26'
-}
+
+
+
 @data_manage.route('/add', methods=['POST'])
 def add():
 
@@ -74,15 +24,28 @@ def add():
     args_field = args['field'].strip()
     args_scope = args['scope'].strip()
     args_year = args['year'].strip()
+    args_radioval=args['radioval'].strip()
+    
     user_name='wsh'
+    pp=mxk_value.query.filter_by(field=args_field,scope=args_scope).first()
+    sta = pp
+    if sta is True:
+        #旧数据处理
+        #sta = mysql_operation.delete_indicator_list(Condition)
+        #返回结果给前端
+        return jsonify(code=400,msg="The old data exists") 
     #接收excle文件并保存到指定路径
     file = request.files.get('file')
+    if file is None:
+        return jsonify(code=400,msg="No files were received that needed to be uploaded") 
     file_path = file_dir+'mxk_value/' + file.filename
     #print(file,type(file),'/n',dir(file),'/n',request.files)
     #print(file.filename,type(file.filename))
     file.save(file_path)
-    result=gao(file_path, args_year, args_field, args_scope, user_name)
-    return jsonify(result)
+    
+
+    result=gao(file_path, args_year, args_field, args_scope, user_name,args_radioval)
+    return result
 
 @data_manage.route('/import_field_list')
 def import_field_list():
@@ -98,8 +61,17 @@ def import_field_list():
 
             if not field in data_dict:
                 data_dict[field]=[]
-
-            data_dict[field].append(scope)
+            pp_value=mxk_value.query.filter_by(field=field,scope=scope).all()
+            year_list=[]
+            for p in pp_value:
+                year_p=p.year
+                if not year_p in year_list:
+                    year_list.append(year_p)
+            scope_dict={
+                'scope_name':scope,
+                'years_exist':year_list
+            }
+            data_dict[field].append(scope_dict)
             fs.append(fs_str)
         else:
             continue
@@ -107,17 +79,30 @@ def import_field_list():
 
 @data_manage.route('/list_detail_year')
 def list_detail_year():
+    country_dict={}
+    fan_country_dict={}
+    pp_list=mxk_region.query.all()
+    for pp in pp_list:
+        region_name=pp.region_name
+        unique_code=pp.unique_code
+        country_dict[unique_code]=region_name
+        fan_country_dict[region_name]=unique_code
 
     field_v = request.args.get('field')
     scope_v = request.args.get('scope')
     year_v = request.args.get('year')
+    #page_num=request.args.get('page_num')
+    #pp_start=0+(int(page_num)-1)*10
+    #pp_end=10+(int(page_num)-1)*10
     pp_list=mxk_value.query.filter_by(field=field_v,scope=scope_v,year=year_v).all()
     
     data_country_dict={}
+
     for pp in pp_list:
         region_name=country_dict[pp.region_code]
         org_name=pp.org_name
         if org_name:
+            
             if org_name not in data_country_dict:
                 data_country_dict[org_name]={'国家名':region_name,'机构名':org_name}
             indicator_name=pp.indicator_name
@@ -148,9 +133,38 @@ def list_detail_year():
 
     data_list=[]
     for dd in data_country_dict:
-        data_list.append(data_country_dict[dd])
+        if dd in data_country_dict:
+            data_list.append(data_country_dict[dd])
+
+
+    data_1=data_list[0]
+    header_list=[]
+    n_c=1
+    c2t_dict={}
+    for dd in data_1:
+        c_name='c{}'.format(n_c)
+        n_c+=1
+        c_row={
+            'name':dd,
+            'value':c_name
+        }
+        c2t_dict[dd]=c_name
+        header_list.append(c_row)
+
+    data_list_new=[]
+    for dd in data_list:
+        row_dict={}
+        for row in dd:
+            row_v=dd[row]
+            row_k=c2t_dict[row]
+            row_dict[row_k]=row_v
+        data_list_new.append(row_dict)
+    
+
+
     resutl={
-        'data':data_list,
+        'header':header_list,
+        'data':data_list_new,
         'status':'ok',
         'total':len(data_list),
         'pagesize':10
@@ -193,13 +207,16 @@ def list_detail():
 def list():
     #field_v = request.args.get('field')
     #scope_v = request.args.get('scope')
+    page_num=request.args.get('page_num')
+    pp_start=0+(int(page_num)-1)*10
+    pp_end=10+(int(page_num)-1)*10
     json_row={
             'status':'ok',
             'data':[]
         }
     fs_list=[]
     data_list=[]
-    pp_list=mxk_value.query.order_by(mxk_value.update_time.desc()).all()
+    pp_list=mxk_value.query.order_by(mxk_value.create_time.asc()).all()
     for pp in pp_list:
         field_v=pp.field
         scope_v=pp.scope
@@ -208,32 +225,41 @@ def list():
         if fs_year not in fs_list:
             data_list.append(pp)
             fs_list.append(fs_year)
-    for data in data_list:
+    for data in data_list[pp_start:pp_end]:
         #id_v=data.id
         field_v=data.field
         scope_v=data.scope
-        update_by_v=data.update_by
-        update_time_v=data.update_time
+        create_by_v=data.create_by
+        create_time=data.create_time
         year_v=data.year
         row={
             #'id':id_v,
             'field':field_v,
             'scope':scope_v,
-            'update_by':update_by_v,
-            'update_time':update_time_v,
-            'year':year_v
+            'create_by':create_by_v,
+            'create_time':create_time,
+            'year':year_v,
         }
         json_row['data'].append(row)
     total_rows=len(data_list)
     json_row['total']=total_rows
     json_row['pagesize']=10
-    json_row=jsonify(json_row)
-    return json_row
+    json_row['page_num']=page_num
+    return jsonify(json_row)
 
 
 #修改
 @data_manage.route('/edit', methods=['POST'])
 def dan_edit():
+    country_dict={}
+    fan_country_dict={}
+    pp_list=mxk_region.query.all()
+    for pp in pp_list:
+        region_name=pp.region_name
+        unique_code=pp.unique_code
+        country_dict[unique_code]=region_name
+        fan_country_dict[region_name]=unique_code
+
     org_name=request.form['org_name']
     region_name=request.form['region_name']
     if org_name==region_name:
@@ -306,7 +332,7 @@ def del_nian():
     try:
         for del_value in del_value_list:
             db.session.delete(del_value)
-        
+        db.session.commit()
         result = {
                 'status':'ok',
     

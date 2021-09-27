@@ -1,0 +1,30 @@
+一、目录文件夹创建
+1.上传sh脚本
+create_dir.sh上传到/home/user/目录下
+
+2.运行命令
+sh /home/user/create_dir.sh
+
+3.解压
+解压fk_data.zip里的所有东西放在/home/user/fk_data 路径下
+解压nginx.zip里的所有东西放在/home/user/nginx 路径下
+
+4.上传镜像
+上传fk_api.tar 到 /home/user/docker_imgs目录下
+
+
+二、修改配置文件
+
+1.编辑/home/user/nginx/html/config.js
+修改baseUrl后面的ip为部署服务器的ip
+
+2.编辑/home/user/fk_data/conf.ini
+修改uri后面的mysql地址
+
+三、docker部署
+
+1.运行命令
+cd /home/user/docker_imgs && docker load -i fk_api.tar && docker run --name flask_api -p 9095:9095 -p 20091:80 -v /home/user/fk_data:/home/fk_data -v /home/user/nginx/nginx.conf:/etc/nginx/nginx.conf -v /home/user/nginx/html:/usr/share/nginx/html:ro -idt flask_api:v2.1
+
+四、浏览器访问
+ip:20091

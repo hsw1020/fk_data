@@ -1,9 +1,15 @@
 import configparser
+import model_manage
 from operator import imod
 import os
+
+from flask.helpers import make_response, send_from_directory
 from login_mmm import login_mmm
-from calculate_manage import calculate_manage
+from model_manage.model import model_manage
+from data_calculate.calculate_manage import calculate_manage
+from bianzhi_manage.bianzhi import bianzhi_manage
 #
+from user_manage.user_manage import user_manage
 from data_manage.data_manage import data_manage
 from token_required import login_r
 from flask import g
@@ -423,7 +429,7 @@ def add_indicator():
         create_by='user1'
         file_moren=file_dir+'moren/'
         file_list=os.listdir(file_moren)
-        tar_file_name=file_moren+'model.xlsx'
+        tar_file_name=file_moren+'model_默认.xlsx'
         for file in file_list:
             if field_v in file:
                 tar_file_name=file_moren+file
@@ -445,7 +451,7 @@ def add_indicator():
             dtest=excel_2_sql0.dtest(file_path)
             if len(dtest)>0:
                 sta='出现重复指标项：{}'.format(dtest)
-                return jsonify(code=400,msg=sta) 
+                return jsonify(code=401,msg=sta) 
             #data_list = excel_2_sql0.gao(field_v,scope_v,file_path)
             data_list = excel_2_sql0.gao(file_path,args_field,args_scope,create_by)
             if len(data_list)==0:
@@ -555,12 +561,13 @@ def add_indicator():
             #旧数据处理
             #sta = mysql_operation.delete_indicator_list(Condition)
             #返回结果给前端
-            return "The old data exists"
+            return jsonify(code=400,msg="The old data exists") 
+            
         try:
             dtest=excel_2_sql0.dtest(file_path)
             if len(dtest)>0:
                 sta='出现重复指标项：{}'.format(dtest)
-                return jsonify(code=400,msg=sta) 
+                return jsonify(code=401,msg=sta) 
             #data_list = excel_2_sql0.gao(field_v,scope_v,file_path)
             data_list = excel_2_sql0.gao(file_path,args_field,args_scope,create_by)
             #data_list = excel_2_sql.add_2_sql(args['field'],args['scope'],file_path)
@@ -639,7 +646,32 @@ def add_indicator():
         
         #查询需要转存的数据
         
+@app.route('/mxk/indicator/value_down')
+def value_down():
+    field_v = request.args.get('field')
+    #scope_v = request.args.get('scope')
+    if '规模结构' in field_v:
+        filename='model_规模结构.xlsx'
+    elif '军费预算' in field_v:
+        filename='model_军费预算.xlsx'
+
+    elif '媒体力量' in field_v:
+        filename='model_媒体力量.xlsx'
+
+    else:
+        filename='model_默认.xlsx'
     
+    
+    filepath= file_dir+'moren/'
+    scope_v = request.args.get('scope')
+    year_v = request.args.get('year')
+
+    response = make_response(send_from_directory(filepath, filename, as_attachment=True))
+
+    response.headers["Content-Disposition"] = "attachment; filename={}".format(filepath.encode().decode('latin-1'))
+
+    return send_from_directory(filepath, filename, as_attachment=True)
+
 
 
 
@@ -648,6 +680,8 @@ if __name__ == '__main__':
     app.register_blueprint(calculate_manage,url_prefix='/mxk/calculate_manage')
     app.register_blueprint(data_manage,url_prefix='/mxk/data_manage')
     app.register_blueprint(login_mmm,url_prefix='/mxk/login_mmm')
-
+    app.register_blueprint(model_manage,url_prefix='/mxk/model_manage')
+    app.register_blueprint(bianzhi_manage,url_prefix='/mxk/bianzhi_manage')
+    app.register_blueprint(user_manage,url_prefix='/mxk/user_manage')
     app.run(port=9095,host='0.0.0.0')
  

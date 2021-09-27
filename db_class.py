@@ -95,3 +95,27 @@ class mxk_measure(db.Model):
     org_id = db.Column(db.String(255),nullable=False,unique=True)
     org_name = db.Column(db.String(255),nullable=False,unique=True)
     create_time= db.Column(db.DateTime,nullable=False,unique=True)
+
+
+class mxk_org(db.Model):
+    __tablename__ = 'dict_org'
+    id= db.Column(db.Integer,primary_key=True)
+    region= db.Column(db.String(255),nullable=False,unique=True)
+    type= db.Column(db.String(255),nullable=False,unique=True)
+    military_level= db.Column(db.String(255),nullable=False,unique=True)
+    military_name_cn= db.Column(db.String(255),nullable=False,unique=True)
+    base_cn= db.Column(db.String(255),nullable=False,unique=True)
+    base_en= db.Column(db.String(255),nullable=False,unique=True)
+    latitude= db.Column(db.String(255),nullable=False,unique=True)
+    longitude= db.Column(db.String(255),nullable=False,unique=True)
+    sort_level=db.Column(db.Integer)
+    sort_military=db.Column(db.Integer)
+
+
+class mxk_region(db.Model):
+    __tablename__ = 'dict_region'
+    id=db.Column(db.Integer,primary_key=True)
+    region_name=db.Column(db.String(255),nullable=False,unique=True)
+    unique_code=db.Column(db.String(255),nullable=False,unique=True)
+    sort=db.Column(db.Integer)
+

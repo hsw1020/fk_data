@@ -1,9 +1,9 @@
 
 # coding: utf-8
 
-# In[88]:
+# In[1]:
 
-
+from flask.json import jsonify
 import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine
@@ -12,9 +12,11 @@ import configparser
 cf = configparser.ConfigParser()
 cf.read("conf.ini")
 mysql_uri = cf.get("mysql", "uri")
-
-# In[154]:
-
+engine=create_engine(mysql_uri)
+data_dict_region=pd.read_sql_table('dict_region',engine)
+data_dict_org=pd.read_sql_table('dict_org',engine)
+data_mxk_indicator_system=pd.read_sql_table('mxk_indicator_system',engine)
+# In[42]:
 
 
 def public_part(data):
@@ -27,10 +29,11 @@ def public_part(data):
             dict_1={'col_name':col_name,'col_value':col_value}
             list_1.append(dict_1)
     data_=pd.DataFrame(list_1)
+    data_.to_excel('222.xlsx')
     return data_
 
 
-# In[155]:
+# In[3]:
 
 
 def public_col(data_,year,user_name):
@@ -54,14 +57,14 @@ def public_col(data_,year,user_name):
     data_['create_by']=user_name
     data_['create_time']=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     data_['update_by']=None
-    data_['update_time']=None
+    data_['update_time']=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     return data_
 
 
-# In[169]:
+# In[4]:
 
 
-def nation(data_nation,year,field,scope,user_name,data_dict_region,data_mxk_indicator_system,engine):
+def nation(data_nation,year,field,scope,user_name):
 #     list_1=[]
 #     list_col=data_nation.columns.tolist()
 #     for i in range(data_nation.shape[0]):
@@ -91,14 +94,14 @@ def nation(data_nation,year,field,scope,user_name,data_dict_region,data_mxk_indi
     #data_nation_1.to_excel('2aa.xlsx')
     data_nation_1['eva_level']=None
     data_nation_1['org_name']=None
-    result=input_table(data_nation_1_,engine)
-    return result
+    input_table(data_nation_1_)
+    return data_nation_1_
 
 
-# In[170]:
+# In[186]:
 
 
-def org(data_org,data_dict_region,year,field,scope,user_name,data_dict_org,data_mxk_indicator_system):
+def org(data_org,data_dict_region,year,field,scope,user_name):
 #     list_2=[]
 #     list_col=data_org.columns.tolist()
 #     for i in range(data_org.shape[0]):
@@ -137,47 +140,199 @@ def org(data_org,data_dict_region,year,field,scope,user_name,data_dict_org,data_
     
     data_org_2=public_col(data_org_2,year,user_name)
     #data_org_2.to_excel('1qqq.xlsx')
-    result=input_table(data_org_2)
-    return result
+    input_table(data_org_2)
+    return data_org_2
 
 
-# In[171]:
+# In[187]:
 
 
-def input_table(table,engine):
+def input_table(table):
     # table.to_sql('tjk_indicator_measure_20210809',engine,if_exists='append',index=False)
-    try:
-        table.to_sql('tjk_indicator_value',engine,if_exists='append',index=False)
-        status={
-            'status':'ok'
-        }
-        
-    except Exception as e:
-        status={
-            'status':'failed',
-            'error_log':str(e)
-        }
-    return status
-# In[172]:
+    table.to_sql('tjk_indicator_value',engine,if_exists='append',index=False)
 
 
-def gao(path,year,field,scope,user_name):
+# In[268]:
+
+
+#excel中有空值，则打印：excel中存在空值
+#excel空表，
+
+#excel中纯数字判断，所存在的数据必须是纯数字；
+def digital_judgment(data):
+    data_error=[]
+    data_shape=data.shape[0]
+    if int(data_shape)>=1:
+        data_=data[data['col_name']!='key'].reset_index(drop=True)
+        #print(data_.head())
+        #print(data_.shape[0])
+        for ii in range(data_.shape[0]):
+            col_value=data_.loc[ii,'col_value']
+            if str(col_value).find('nan')>-1:
+                #value='excel中存在空值'
+                data_error.append('excel中存在空值')
+            else:
+                try:
+                    value=float(col_value)
+                except:
+                    value='数据内容有误'
+                    data_error.append('数据内容有误')
+                    break
+#         if str(value).find('数据内容有误')>-1 or str(value).find('excel中存在空值')>-1:
+#             data_error.append(value)
+    else:
+        data_error.append('数据不能为空')
+    #返回是0，则数据内容没有错误，若返回大于0，则数据内容有问题。
+    return len(data_error)
+
+
+# In[269]:
+
+
+#三级指标
+def system_level(data):
+    #根级
+    list_root=[]
+    for i in range(data.shape[0]):
+        data_parentId=data.loc[i,'parentId']
+        data_indicator_id=data.loc[i,'indicator_id']
+        if data_parentId is None:
+            list_root.append(data_indicator_id)
+    #一级
+    list_one=[]
+    for ii in range(len(list_root)):
+        root=list_root[ii]
+        #print(type(one))
+        for i in range(data.shape[0]):
+            if data.loc[i,'parentId'] is not None:
+                data_parentId=data.loc[i,'parentId']
+                #print(int(data_parentId)-int(one))
+                data_indicator_id=data.loc[i,'indicator_id']
+                if int(data_parentId)-int(root)==0:
+                    list_one.append(data_indicator_id)
+    #二级
+    list_two=[]
+    for ii in range(len(list_one)):
+        one=list_one[ii]
+        #print(type(one))
+        for i in range(data.shape[0]):
+            if data.loc[i,'parentId'] is not None:
+                #data_field=data.loc[i,'field']
+                #data_scope=data.loc[i,'scope']
+                data_parentId=data.loc[i,'parentId']
+                data_indicator_id=data.loc[i,'indicator_id']
+                #data_indicator_name=data.loc[i,'indicator_name']
+                if int(data_parentId)-int(one)==0:
+                    list_two.append(data_indicator_id)
+    #三级
+    list_three=[]
+    for ii in range(len(list_two)):
+        two=list_two[ii]
+        #print(type(one))
+        for i in range(data.shape[0]):
+            if data.loc[i,'parentId'] is not None:
+                data_field=data.loc[i,'field']
+                data_scope=data.loc[i,'scope']
+                data_parentId=data.loc[i,'parentId']
+                data_indicator_id=data.loc[i,'indicator_id']
+                data_indicator_name=data.loc[i,'indicator_name']
+                if int(data_parentId)-int(two)==0:
+                    disct={
+                        'field':data_field,
+                        'scope':data_scope,
+                        'indicator_name':data_indicator_name
+                          }
+                    list_three.append(disct)
+    level_three=pd.DataFrame(list_three)
+    return level_three
+
+
+# In[270]:
+
+
+#判断三级指标是否多，或者少
+def digital_judgment_system_level(level_three,field,scope,xls_columns):
+    data_=level_three[(level_three['field'].str.contains(field)) & (level_three['scope'].str.contains(scope))]
+
+    data_tolist=data_.loc[:,'indicator_name'].tolist()
+    xls_columns=xls_columns.tolist()[1:]
     
-    # engine=create_engine('mysql+pymysql://root:12345.zcf@localhost/fjkz')
-    engine=create_engine(mysql_uri)
-    data_dict_region=pd.read_sql_table('dict_region',engine)
-    data_dict_org=pd.read_sql_table('dict_org',engine)
-    data_mxk_indicator_system=pd.read_sql_table('mxk_indicator_system',engine)
-
-    #path=r'D:\work\数据添加\部署\mxk_value\value_media_nation_2021.xlsx'
-    #year='2021'
-    #field='媒体力量'
-    #scope='媒体力量'
-    #user_name='张冲锋'
-    if path.find('nation')>0:
-        data_nation=pd.read_excel(path)
-        result=nation(data_nation,year,field,scope,user_name,data_dict_region,data_mxk_indicator_system,engine)
-    elif path.find('org')>0:
-        data_org=pd.read_excel(path)
-        result=org(data_org,data_dict_region,year,field,scope,user_name,data_dict_org,data_mxk_indicator_system)
+    a=list(set(data_tolist).difference(set(xls_columns)))
+    #print(a)
+    #print('----------------------------')
+    b=list(set(xls_columns).difference(set(data_tolist)))
+    #print(xls_columns)
+    #print(b)
+    #print('----------------------------')
+    if len(a)>0:
+        result='三级指标缺少：'+",".join(a)
+    elif len(b)>0:
+        result='三级指标多了：'+",".join(b)
+    else:
+        result='三级指标正常'
     return result
+
+
+# In[271]:
+
+
+def data_verification(path,user_name,arg,year,field,scope):
+    
+    level_three=system_level(data_mxk_indicator_system)
+   
+    data_read=pd.read_excel(path)
+    
+    data_base=public_part(data_read)
+    xls_columns=data_read.columns
+   
+    three_result=digital_judgment_system_level(level_three,field,scope,xls_columns)
+    #print(three_result)
+    number_=digital_judgment(data_base)
+        #print(three_result)
+    if (number_==0) and (three_result.find('三级指标正常'))>-1:
+        #print('没问题')
+        
+        if arg=='nation':
+            nation(data_read,year,field,scope,user_name)
+        else:
+            org(data_read,data_dict_region,year,field,scope,user_name)
+        result='导入成功！'
+    else:
+        if number_!=0:
+            result='excel中数据有问题'
+            #print('excel中数据有问题')
+        elif three_result.find('三级指标正常')<0:
+            result='三级指标不匹配'
+            #print('三级指标不匹配')
+    return result
+
+
+# In[273]:
+
+def gao(path,year,field,scope,user_name,nation_org):
+    try:
+        # engine=create_engine('mysql+pymysql://root:12345.zcf@localhost/fjkz')
+
+
+        #path=r'D:\work\数据添加\部署\mxk_value\value_media_nation_2021.xlsx'
+        #year='2021'
+        #field='媒体力量'
+        #scope='媒体力量'
+        #user_name='张冲锋'
+        result=data_verification(path,user_name,nation_org,year,field,scope)
+        
+        return jsonify(code=200,msg=result)
+    except Exception as e:
+        result=str(e)
+
+        return jsonify(code=400,msg=result)
+path=r'D:\work\数据添加\home\mxk_value\value_media_nation_2021.xlsx'
+user_name='awd'
+nation_org='nation'
+year='2905'
+field='规模结构'
+scope='周边国家'
+result=data_verification(path,user_name,nation_org,year,field,scope)
+
+
+print(result)
