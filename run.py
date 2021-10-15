@@ -11,6 +11,8 @@ from bianzhi_manage.bianzhi import bianzhi_manage
 #
 from user_manage.user_manage import user_manage
 from data_manage.data_manage import data_manage
+from weight_manage.weight_manage import weight_manage
+
 from token_required import login_r
 from flask import g
 from flask import Flask
@@ -287,11 +289,15 @@ def del_indicator():
         scope_v = request.args.get('scope')
         del_sys_list=Mxk_indicator_system.query.filter_by(scope=scope_v,field=field_v).all()
         del_json=mxk_indicator_json.query.filter_by(scope=scope_v,field=field_v).first()
-        
+        del_value_list=mxk_value.query.filter_by(scope=scope_v,field=field_v).all()
+        del_measure_list=mxk_measure.query.filter_by(scope=scope_v,field=field_v).all()
         db.session.delete(del_json)
         for del_sys in del_sys_list:
             db.session.delete(del_sys)
-            
+        for del_value in del_value_list:
+            db.session.delete(del_value)
+        for del_measure in del_measure_list:
+            db.session.delete(del_measure)    
         
         return 'successful deleted!'
     except Exception as e:
@@ -683,5 +689,6 @@ if __name__ == '__main__':
     app.register_blueprint(model_manage,url_prefix='/mxk/model_manage')
     app.register_blueprint(bianzhi_manage,url_prefix='/mxk/bianzhi_manage')
     app.register_blueprint(user_manage,url_prefix='/mxk/user_manage')
+    app.register_blueprint(weight_manage,url_prefix='/mxk/weight_manage')
     app.run(port=9095,host='0.0.0.0')
  

@@ -39,6 +39,7 @@ def list():
         }
 
         file_info_list.append(ff_row)
+    file_info_list.sort(key=lambda stu: stu["created_time"])
     file_info_list=file_info_list[page_start:page_end]
     total_files=len(file_info_list)
     return jsonify(code=200,data=file_info_list,page_num=page_num,page_size=10,total=total_files)

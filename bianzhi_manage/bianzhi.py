@@ -2,7 +2,7 @@
 from flask import Blueprint,request
 from flask.json import jsonify
 from db_class import *
-
+from token_required import login_r
 from sqlalchemy.exc import SQLAlchemyError
 
 
@@ -11,6 +11,7 @@ from sqlalchemy.exc import SQLAlchemyError
 bianzhi_manage=Blueprint('bianzhi_manage',__name__)
 
 @bianzhi_manage.route('/list_country')
+@login_r
 def list_country():
     page_num=request.args.get('page_num')
     pp_start=0+(int(page_num)-1)*10
@@ -47,6 +48,7 @@ def list_country():
             continue
         country_dict[region_name][military_level].append(military_name_dict)
     data_list=[]
+    
     for cc in country_dict:
         level_dict=country_dict[cc]
         level_list=[]
@@ -64,6 +66,19 @@ def list_country():
             'level_list':level_list
         }
         data_list.append(row_dict)
+    country_exist_list=[]
+    for dd in data_list:
+        country_exist_list.append(dd['nation'])
+    #country_all_list=[]
+    pp_country_list=mxk_region.query.all()
+    for pp in pp_country_list:
+        country_name=pp.region_name
+        if country_name not in country_exist_list:
+            row_dict={
+                'nation':country_name,
+                'level_list':[]
+            }
+            data_list.append(row_dict)
     total_num=len(data_list)
     data_list=data_list[pp_start:pp_end]
     return jsonify(code=200,data=data_list,msg='ok',page_num=page_num,page_size=10,total=total_num)
@@ -84,7 +99,9 @@ def del_():
         del_value_list=mxk_org.query.filter_by(region=nation,military_level=level).all()
         
     if nation and not level and not name:
-        del_value_list=mxk_org.query.filter_by(region=nation).all()
+        del_value_list1=mxk_org.query.filter_by(region=nation).all()
+        del_value_list2=mxk_region.query.filter_by(region_name=nation).all()
+        del_value_list=del_value_list1+del_value_list2
     for del_value in del_value_list:
         db.session.delete(del_value)
     
@@ -97,17 +114,19 @@ def del_():
 def add_region():
     region_name=request.args.get('region_name')
     unique_code=request.args.get('unique_code')
-    sort=int(request.args.get('sort'))
+    #sort=int(request.args.get('sort'))
     pp=mxk_region.query.filter_by(region_name=region_name).first()
     if pp:
         return jsonify(code=400,msg='region_name 已存在！')
-    pp=mxk_region.query.filter_by(sort=sort).first()
-    if pp:
-        return jsonify(code=400,msg='sort 已存在！')
+    #if sort:
+    #    pp=mxk_region.query.filter_by(sort=sort).first()
+    #    if pp:
+    #        return jsonify(code=400,msg='sort 已存在！')
     pp=mxk_region.query.filter_by(unique_code=unique_code).first()
     if pp:
         return jsonify(code=400,msg='unique_code 已存在！')
-    mxk_region_add=mxk_region(region_name=region_name,unique_code=unique_code,sort=sort)
+    #mxk_region_add=mxk_region(region_name=region_name,unique_code=unique_code,sort=sort)
+    mxk_region_add=mxk_region(region_name=region_name,unique_code=unique_code)
     db.session.add(mxk_region_add)
     db.session.commit()
 
@@ -148,16 +167,18 @@ def jdlv_select():
 def add_jdlv():
     region=request.args.get('region')
     military_level=request.args.get('military_level')
-    sort_level=int(request.args.get('sort_level'))
-    #sort_military=int(request.args.get('sort_military'))
-    pp=mxk_org.query.filter_by(sort_level=sort_level).first()
-    if pp:
-        return jsonify(code=400,msg='sort_level exist')
+    #sort_level=request.args.get('sort_level')
+    #if sort_level:
+    #    sort_level=int(sort_level)
+    ##sort_military=int(request.args.get('sort_military'))
+    #    pp=mxk_org.query.filter_by(sort_level=sort_level).first()
+    #    if pp:
+    #        return jsonify(code=400,msg='sort_level exist')
     
     pp=mxk_org.query.filter_by(region=region,military_level=military_level).first()
     if pp:
         return jsonify(code=400,msg='military_level 已存在！')
-    mxk_org_add=mxk_org(region=region,military_level=military_level,sort_level=sort_level)
+    mxk_org_add=mxk_org(region=region,military_level=military_level)
     db.session.add(mxk_org_add)
     db.session.commit()
 
@@ -172,16 +193,17 @@ def add_jdname():
     base_en=request.args.get('base_en')
     latitude=request.args.get('latitude')
     longitude=request.args.get('longitude')
-    
-    sort_military=int(request.args.get('sort_military'))
-    
-    sort_level=mxk_org.query.filter_by(
-        region=region,
-        military_level=military_level
-    ).first().sort_level
-    pp=mxk_org.query.filter_by(sort_military=sort_military).first()
-    if pp:
-        return jsonify(code=400,msg='sort_military exist')
+    #sort_military=request.args.get('sort_military')
+    #if sort_military:
+    #    sort_military=int(sort_military)
+#
+    #    sort_level=mxk_org.query.filter_by(
+    #        region=region,
+    #        military_level=military_level
+    #    ).first().sort_level
+    #    pp=mxk_org.query.filter_by(sort_military=sort_military).first()
+    #    if pp:
+    #        return jsonify(code=400,msg='sort_military exist')
     pp=mxk_org.query.filter_by(region=region,military_name_cn=military_name_cn,military_level=military_level).first()
     if pp:
         return jsonify(code=400,msg='military_name_cn 已存在！')
@@ -193,8 +215,8 @@ def add_jdname():
         base_en=base_en,
         latitude=latitude,
         longitude=longitude,
-        sort_level=sort_level,
-        sort_military=sort_military
+        #sort_level=sort_level,
+        #sort_military=sort_military
     )
     db.session.add(mxk_org_add)
     pp_jdlv_kong=mxk_org.query.filter_by(
@@ -221,22 +243,22 @@ def edit_region():
         region_name=request.args.get('region_name')
         pp=mxk_region.query.filter_by(region_name=region_name).first()
         unique_code=pp.unique_code
-        sort=pp.sort
+        #sort=pp.sort
         data={
             'region_name':region_name,
             'unique_code':unique_code,
-            'sort_level':sort
+            #'sort_level':sort
         }
         return jsonify(code=200,msg='ok',data=data)
     else:
         
         region_name=request.form['region_name']
         unique_code=request.form['unique_code']
-        sort=request.form['sort']
+        #sort=request.form['sort']
         #unique_code=request.form['unique_code']
         region_name_new=request.form['region_name_new']
         unique_code_new=request.form['unique_code_new']
-        sort_new=request.form['sort_new']
+        #sort_new=request.form['sort_new']
         
         pp=mxk_region.query.filter_by(region_name=region_name_new).first()
         if pp and region_name_new!=region_name:
@@ -245,16 +267,23 @@ def edit_region():
         pp=mxk_region.query.filter_by(unique_code=unique_code_new).first()
         if pp and region_name_new!=region_name :
             return jsonify(code=400,msg='unique_code 已存在！')
-        pp=mxk_region.query.filter_by(sort=sort_new).first()
-        if pp and sort!=sort_new:
-            return jsonify(code=400,msg='sort 已存在！')
+        #pp=mxk_region.query.filter_by(sort=sort_new).first()
+        #if pp and sort!=sort_new:
+        #    return jsonify(code=400,msg='sort 已存在！')
         pp_old= mxk_region.query.filter_by(
             region_name=region_name,
             #unique_code=unique_code
         ).first()
         pp_old.region_name=region_name_new
         pp_old.unique_code=unique_code_new
-        pp_old.sort=sort_new
+
+        pp_org_old_list=mxk_org.query.filter_by(
+            region=region_name,
+            #unique_code=unique_code
+        ).all()
+        for pp_org_old in pp_org_old_list:
+            pp_org_old.region=region_name_new
+        #pp_old.sort=sort_new
         db.session.commit()
         return jsonify(code=200,msg='edit successful')
 
@@ -267,25 +296,25 @@ def edit_jdlv():
         region=request.args.get('region')
         military_level=request.args.get('military_level')
         pp=mxk_org.query.filter_by(region=region,military_level=military_level).first()
-        sort_level=pp.sort_level
+        #sort_level=pp.sort_level
     
         data={
             'region':region,
             'military_level':military_level,
-            'sort_level':sort_level
+            #'sort_level':sort_level
         }
         return jsonify(code=200,msg='ok',data=data)
     else:
         region=request.form['region']
         military_level=request.form['military_level']
-        sort=request.form['sort']
+        #sort=request.form['sort']
         
         region_new=request.form['region_new']
         military_level_new=request.form['military_level_new']
-        sort_new=request.form['sort_new']
-        pp=mxk_org.query.filter_by(sort_level=sort_new).first()
-        if pp and sort!=sort_new:
-            return jsonify(code=400,msg='sort_level 已存在！')
+        #sort_new=request.form['sort_new']
+        #pp=mxk_org.query.filter_by(sort_level=sort_new).first()
+        #if pp and sort!=sort_new:
+        #    return jsonify(code=400,msg='sort_level 已存在！')
         
         pp=mxk_org.query.filter_by(region=region,military_level=military_level_new).first()
         if pp and military_level_new!=military_level:
@@ -299,7 +328,7 @@ def edit_jdlv():
         for pp_old in pp_old_list:
             pp_old.region=region_new
             pp_old.military_level=military_level_new
-            pp_old.sort_level=sort_new
+            #pp_old.sort_level=sort_new
         
         db.session.commit()
         return jsonify(code=200,msg='edit successful')
@@ -317,7 +346,7 @@ def edit_jdname():
         latitude=pp.latitude
         longitude=pp.longitude
         #sort_level=pp.sort_level
-        sort_military=pp.sort_military
+        #sort_military=pp.sort_military
         
 
 
@@ -329,7 +358,7 @@ def edit_jdname():
             'base_en':base_en,
             'latitude':latitude,
             'longitude':longitude,
-            'sort_military':sort_military
+            #'sort_military':sort_military
         }
         return jsonify(code=200,msg='ok',data=data)
     else:
@@ -337,7 +366,7 @@ def edit_jdname():
             region=request.form['region']
             military_level=request.form['military_level']
             military_name_cn=request.form['military_name_cn']
-            sort_military=request.form['sort_military_new']
+            #sort_military=request.form['sort_military_new']
             region_new=request.form['region_new']
             military_level_new=request.form['military_level_new']
             military_name_cn_new=request.form['military_name_cn_new']
@@ -346,11 +375,11 @@ def edit_jdname():
             base_en_new=request.form['base_en_new']
             latitude_new=request.form['latitude_new']
             longitude_new=request.form['longitude_new']
-            sort_military_new=request.form['sort_military_new']
+            #sort_military_new=request.form['sort_military_new']
 
-            pp=mxk_org.query.filter_by(sort_military=sort_military_new).first()
-            if pp and sort_military!=sort_military_new:
-                return jsonify(code=400,msg='sort_military 已存在！')
+            #pp=mxk_org.query.filter_by(sort_military=sort_military_new).first()
+            #if pp and sort_military!=sort_military_new:
+            #    return jsonify(code=400,msg='sort_military 已存在！')
 
             pp=mxk_org.query.filter_by(region=region,military_level=military_level_new,military_name_cn=military_name_cn_new).first()
             if pp and military_name_cn_new!=military_name_cn:
@@ -367,7 +396,7 @@ def edit_jdname():
             pp_old.base_en=base_en_new
             pp_old.latitude=latitude_new
             pp_old.longitude=longitude_new
-            pp_old.sort_military=sort_military_new
+            #pp_old.sort_military=sort_military_new
             db.session.commit()
             return jsonify(code=200,msg='edit successful')
         except Exception as e:

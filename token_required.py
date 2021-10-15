@@ -5,7 +5,7 @@ from db_class import Users
 
 def create_token(api_user):
 
-    s = Serializer(current_app.config["SECRET_KEY"],expires_in=3600)
+    s = Serializer(current_app.config["SECRET_KEY"],expires_in=36000)
     #接收用户id转换与编码
     token = s.dumps({"id":api_user}).decode("ascii")
     return token
@@ -40,6 +40,7 @@ def login_r(view_func):
             return jsonify(code = 4103,msg = '缺少参数token')
         
         s = Serializer(current_app.config["SECRET_KEY"])
+
         try:
             s.loads(token)
         except Exception:

@@ -320,19 +320,16 @@ def gao(path,year,field,scope,user_name,nation_org):
         #scope='媒体力量'
         #user_name='张冲锋'
         result=data_verification(path,user_name,nation_org,year,field,scope)
-        
+        if result != '导入成功！':
+            return jsonify(code=400,msg=result)
         return jsonify(code=200,msg=result)
     except Exception as e:
         result=str(e)
 
         return jsonify(code=400,msg=result)
-path=r'D:\work\数据添加\home\mxk_value\value_media_nation_2021.xlsx'
-user_name='awd'
-nation_org='nation'
-year='2905'
-field='规模结构'
-scope='周边国家'
-result=data_verification(path,user_name,nation_org,year,field,scope)
-
-
-print(result)
+#path=r'D:\work\数据添加\value_luoyi_nation_10086.xlsx'
+#year='2039'
+#field='规模结构'
+#scope='台湾部队'
+#user_name='张冲锋'
+#gao(path,year,field,scope,user_name,'org')
