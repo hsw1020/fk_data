@@ -171,12 +171,12 @@ def calculate():
     for pp in pp_list:
         indicator_name=pp.indicator_name
         weight=pp.weight
-        if field_v!=indicator_name and not weight:
-            if not weight==0:
-                return jsonify(code=400,msg='评价主题为{}，评价对象为{}中{}的权重存在空值，无法计算！'.format(field_v,scope_v,indicator_name))
+        if field_v!=indicator_name and weight is None:
+            
+            return jsonify(code=400,msg='评价主题为{}，评价对象为{}中{}的权重存在空值，无法计算！'.format(field_v,scope_v,indicator_name))
 
     try:
-        get_org('tjk_indicator_measure',field_v,scope_v)
+        get_org('mxk_indicator_result',field_v,scope_v)
         return jsonify(code=200,msg='calculate done!')
     except Exception as e:
         return jsonify(code=400,msg=str(e))
@@ -200,12 +200,13 @@ def calculate_all():
         scope_v=pp.scope
         indicator_name=pp.indicator_name
         weight=pp.weight
-        if field_v!=indicator_name and not weight:
+        if field_v!=indicator_name and   weight is None:
+           
             if  field_v in pp_value_field_list:
                 if scope_v in pp_value_field_list[field_v]:
                     return jsonify(code=400,msg='评价主题为{}，评价对象为{}的指标体系权重存在空值，无法计算！'.format(field_v,scope_v))
     try:
-        get_org('tjk_indicator_measure','all','all')
+        get_org('mxk_indicator_result','all','all')
         return jsonify(code=200,msg='calculate done!')
     except Exception as e:
         return jsonify(code=400,msg=str(e))

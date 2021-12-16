@@ -114,9 +114,9 @@ if __name__ == '__main__':
     # path=r'C:\Users\admin\Desktop\指标体系相关\指标体系相关\1指标体系样例_媒体力量.xlsx'
 
     engine=create_engine(mysql_uri)
-    path=r'D:\work\数据添加\Template.xlsx'  #tree_media_country
-    field='媒体力量33'
-    scope='周边国家33'
+    path=r'C:\Users\Administrator\Documents\WeChat Files\wangsihao031516\FileStorage\File\2021-11\军费开支-指标框架(1).xlsx'  #tree_media_country
+    field='军费开支'
+    scope='周边国家'
     add_2_sql(field,scope,path)
     # path=r'D:\20210809eva\tree_scale_country.xlsx'
     # field='规模结构'

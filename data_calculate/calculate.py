@@ -16,7 +16,6 @@ mysql_uri = cf.get("mysql", "uri")
 
 # In[47]:
 
-engine=create_engine(mysql_uri)
 user=re.findall('//(.*?):',mysql_uri)[0]
 
 password=re.findall('//.*:(.*?)@',mysql_uri)[0]
@@ -24,7 +23,7 @@ host=re.findall('@(.*?):',mysql_uri)[0]
 port=re.findall('.*:.*:.*:(.*)/',mysql_uri)[0]
 ku=re.findall('.*:.*:.*:.*/(.*)',mysql_uri)[0]
 
-db=pymysql.connect(host=host,user=user,passwd=password,database=ku,port=int(port))
+
 def truncate_table(table,db):
     db = db
     #使用cursor()方法获取操作游标
@@ -56,8 +55,56 @@ def input_table(data,table,db):
     cursor = db.cursor()
     
     columns = ','.join(list(data.columns))
-
+    columns+=',rank_'
+    #field,indicator_id,region_code,indicator_name,scope,score,year,org_id,eva_level,org_name,create_time,rank
     data_list=[tuple(i) for i in data.values]
+    year_dict={}
+    for dd in data_list:
+        indicator_name=dd[3]
+        year=dd[6]
+        score=dd[5]
+        if score:
+            score=dd[5]
+        else:
+            score=0
+        
+        eva_level=dd[8]
+
+        if not year in year_dict:
+            year_dict[year]={}
+        if not indicator_name in year_dict[year]:
+            year_dict[year][indicator_name]={}
+        if eva_level:
+            if eva_level not in year_dict[year][indicator_name]:
+                year_dict[year][indicator_name][eva_level]=[]
+        else:
+            eva_level='none_eva_level'
+            if eva_level not in year_dict[year][indicator_name]:
+                year_dict[year][indicator_name][eva_level]=[]
+
+        
+        year_dict[year][indicator_name][eva_level].append(
+            {
+                'dd':dd,
+                'score':score
+            }
+        )
+    data_list=[]
+    for year in year_dict:
+        year_v=year_dict[year]
+        for indicator_name in year_v:
+            for eva_level in year_v[indicator_name]:
+                sorted_rank_list = sorted(year_v[indicator_name][eva_level], key=lambda x : x['score'], reverse=True)  
+                len_rank_list=len(sorted_rank_list)
+                for i in range(len_rank_list):
+                    rank_number=i+1
+                    dd=sorted_rank_list[i]['dd']
+                    dd_list=list(dd)
+                    dd_list.append(rank_number)
+                    data_list.append(dd_list)
+
+
+    
     s_count = (len(data_list[0])) * "%s,"
     #print(s_count)
     
@@ -110,6 +157,8 @@ def delete_data(field_,scope_,data_table,db):
 
 
 def level_():
+    engine=create_engine(mysql_uri)
+    db=pymysql.connect(host=host,user=user,passwd=password,database=ku,port=int(port))
     data_mxk_indicator_system=pd.read_sql_table('mxk_indicator_system',engine)
     data_mxk_indicator_system['indicator_id']=data_mxk_indicator_system['indicator_id'].astype('str')
     data_level_1=data_mxk_indicator_system[data_mxk_indicator_system['parentId'].isnull()]
@@ -216,20 +265,22 @@ def level_():
 
 
 def choice_nation_org(field_,scope_):
+    engine=create_engine(mysql_uri)
+    db=pymysql.connect(host=host,user=user,passwd=password,database=ku,port=int(port))
     if field_.find('all')>-1:
-        data_tjk_indicator_value=pd.read_sql_table('tjk_indicator_value',engine)
+        data_tjk_indicator_eva=pd.read_sql_table('tjk_indicator_eva',engine)
     else:
-        data_tjk_indicator_value=pd.read_sql_table('tjk_indicator_value',engine)
-        data_tjk_indicator_value=data_tjk_indicator_value[(data_tjk_indicator_value['field']==field_) & 
-                                                          (data_tjk_indicator_value['scope']==scope_)]
-    #print(data_tjk_indicator_value.head())
-    data_tjk_indicator_value['region_code']=np.where(data_tjk_indicator_value['org_id'].isnull(),
-             data_tjk_indicator_value['region_code'],
-             data_tjk_indicator_value['region_code'].astype(str)+'_'+data_tjk_indicator_value['org_name'])
+        data_tjk_indicator_eva=pd.read_sql_table('tjk_indicator_eva',engine)
+        data_tjk_indicator_eva=data_tjk_indicator_eva[(data_tjk_indicator_eva['field']==field_) & 
+                                                          (data_tjk_indicator_eva['scope']==scope_)]
+    #print(data_tjk_indicator_eva.head())
+    data_tjk_indicator_eva['region_code']=np.where(data_tjk_indicator_eva['org_id'].isnull(),
+             data_tjk_indicator_eva['region_code'],
+             data_tjk_indicator_eva['region_code'].astype(str)+'_'+data_tjk_indicator_eva['org_name'])
     
-    data_tjk_indicator_value['eva_level']=np.where(data_tjk_indicator_value['org_id'].isnull(),'占位符',data_tjk_indicator_value['eva_level'])
+    data_tjk_indicator_eva['eva_level']=np.where(data_tjk_indicator_eva['org_id'].isnull(),'占位符',data_tjk_indicator_eva['eva_level'])
     
-    return data_tjk_indicator_value
+    return data_tjk_indicator_eva
 
 
 # In[52]:
@@ -237,17 +288,17 @@ def choice_nation_org(field_,scope_):
 
 #三级分值计算
 def level_3_calculation(field_,scope_):
-    #data_tjk_indicator_value=pd.read_sql_table('tjk_indicator_value',engine)
+    #data_tjk_indicator_eva=pd.read_sql_table('tjk_indicator_eva',engine)
 
-    data_tjk_indicator_value=choice_nation_org(field_,scope_)
-    data_tjk_indicator_value['indicator_value_0_1']=data_tjk_indicator_value.groupby(['field',
+    data_tjk_indicator_eva=choice_nation_org(field_,scope_)
+    data_tjk_indicator_eva['indicator_value_0_1']=data_tjk_indicator_eva.groupby(['field',
                                                                                       'scope',
                                                                                       'year',
                                                                                       'eva_level',
                                                                                       'indicator_name'])['indicator_value'].apply(lambda x: (x - np.min(x)) / (np.max(x) - np.min(x)))
     
-    data_tjk_indicator_value['score']=data_tjk_indicator_value['indicator_value_0_1']
-    data_3=data_tjk_indicator_value.loc[:,['field','year','region_code','eva_level','scope',
+    data_tjk_indicator_eva['score']=data_tjk_indicator_eva['indicator_value_0_1']
+    data_3=data_tjk_indicator_eva.loc[:,['field','year','region_code','eva_level','scope',
                                 'indicator_id','indicator_name','score']]
     
     data_3['score']=np.where(data_3['score']==0,0.00001,data_3['score'])
@@ -394,7 +445,8 @@ def data_input(field_,scope_):
 
 def get_org(data_table,field_,scope_):
     df=data_input(field_,scope_)
-    
+    engine=create_engine(mysql_uri)
+    db=pymysql.connect(host=host,user=user,passwd=password,database=ku,port=int(port))
     dict_org=pd.read_sql_table('dict_org',engine)
     df['region_code']=np.where(df['region_code'].str.contains('_'),df['region_code'],df['region_code']+str('_'))
     df['region_code_']=df['region_code'].str.split('_',expand=True)[0]

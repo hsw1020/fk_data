@@ -10,9 +10,10 @@ from data_calculate.calculate_manage import calculate_manage
 from bianzhi_manage.bianzhi import bianzhi_manage
 #
 from user_manage.user_manage import user_manage
+from base_manage.base_manage import base_manage
 from data_manage.data_manage import data_manage
 from weight_manage.weight_manage import weight_manage
-
+from fenxi_manage.fenxi_manage import fenxi_manage
 from token_required import login_r
 from flask import g
 from flask import Flask
@@ -60,6 +61,7 @@ app = Flask(__name__,template_folder='templates',static_folder="static")
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.json_encoder = CustomJSONEncoder
 app.config['SQLALCHEMY_DATABASE_URI'] = mysql_uri
+app.config['JSON_AS_ASCII'] = False
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 #查询时会显示原始SQL语句
 app.config['SQLALCHEMY_ECHO'] = True
@@ -291,6 +293,7 @@ def del_indicator():
         del_json=mxk_indicator_json.query.filter_by(scope=scope_v,field=field_v).first()
         del_value_list=mxk_value.query.filter_by(scope=scope_v,field=field_v).all()
         del_measure_list=mxk_measure.query.filter_by(scope=scope_v,field=field_v).all()
+        del_fenxi_list=mxk_analysis.query.filter_by(scope=scope_v,field=field_v).all()
         db.session.delete(del_json)
         for del_sys in del_sys_list:
             db.session.delete(del_sys)
@@ -298,7 +301,8 @@ def del_indicator():
             db.session.delete(del_value)
         for del_measure in del_measure_list:
             db.session.delete(del_measure)    
-        
+        for del_fenxi in del_fenxi_list:
+            db.session.delete(del_fenxi)  
         return 'successful deleted!'
     except Exception as e:
         return str(e)
@@ -577,10 +581,15 @@ def add_indicator():
             #data_list = excel_2_sql0.gao(field_v,scope_v,file_path)
             data_list = excel_2_sql0.gao(file_path,args_field,args_scope,create_by)
             #data_list = excel_2_sql.add_2_sql(args['field'],args['scope'],file_path)
-            if len(data_list) ==0:
+            data_list_type=type(data_list)
+            if data_list_type==int:
+                return jsonify(code=405,msg='导入的文件中指标与评价主题/评价对象重名，请重命名该指标名称。') 
+            elif len(data_list) ==0:
                 sta='file err!'
                 return jsonify(code=400,msg=sta) 
-        except :
+            
+            
+        except Exception as e :
             sta='file err!'
             return jsonify(code=400,msg=sta) 
         dd0=data_list[0]
@@ -690,5 +699,7 @@ if __name__ == '__main__':
     app.register_blueprint(bianzhi_manage,url_prefix='/mxk/bianzhi_manage')
     app.register_blueprint(user_manage,url_prefix='/mxk/user_manage')
     app.register_blueprint(weight_manage,url_prefix='/mxk/weight_manage')
+    app.register_blueprint(fenxi_manage,url_prefix='/mxk/fenxi_manage')
+    app.register_blueprint(base_manage,url_prefix='/mxk/base_manage')
     app.run(port=9095,host='0.0.0.0')
  

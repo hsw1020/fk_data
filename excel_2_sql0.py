@@ -156,5 +156,10 @@ def gao(path,field,scope,create_by):
     
     data_range_=int(data_range())
     data=pd.read_excel(path)
+    if_err=data.values
+    for ii in if_err:
+        ii_list=ii.tolist()
+        if field in ii_list or scope in ii_list:
+            return 3
     data_list=data_(data,data_range_,field,scope,create_by)
     return data_list

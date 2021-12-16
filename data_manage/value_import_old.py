@@ -146,9 +146,9 @@ def org(data_org,data_dict_region,year,field,scope,user_name,data_dict_org,data_
 
 
 def input_table(table,engine):
-    # table.to_sql('tjk_indicator_measure_20210809',engine,if_exists='append',index=False)
+    # table.to_sql('mxk_indicator_result_20210809',engine,if_exists='append',index=False)
     try:
-        table.to_sql('tjk_indicator_value',engine,if_exists='append',index=False)
+        table.to_sql('tjk_indicator_eva',engine,if_exists='append',index=False)
         status=1
         
     except Exception as e:

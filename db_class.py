@@ -33,7 +33,7 @@ class mxk_indicator_json(db.Model):
     update_time = db.Column(db.DateTime,nullable=False,unique=True)
 
 class mxk_value(db.Model):
-    __tablename__ = 'tjk_indicator_value'
+    __tablename__ = 'tjk_indicator_eva'
     id = db.Column(db.Integer,primary_key=True)
     field = db.Column(db.String(255),nullable=False,unique=True)
     scope = db.Column(db.String(255),nullable=False,unique=True)
@@ -81,7 +81,7 @@ class Users(db.Model):
 
 
 class mxk_measure(db.Model):
-    __tablename__ = 'tjk_indicator_measure'
+    __tablename__ = 'mxk_indicator_result'
 
     id= db.Column(db.Integer,primary_key=True)
     field = db.Column(db.String(255),nullable=False,unique=True)
@@ -95,6 +95,8 @@ class mxk_measure(db.Model):
     org_id = db.Column(db.String(255),nullable=False,unique=True)
     org_name = db.Column(db.String(255),nullable=False,unique=True)
     create_time= db.Column(db.DateTime,nullable=False,unique=True)
+    rank_=db.Column(db.Integer,nullable=False,unique=True)
+
 
 
 class mxk_org(db.Model):
@@ -119,3 +121,51 @@ class mxk_region(db.Model):
     unique_code=db.Column(db.String(255),nullable=False,unique=True)
     sort=db.Column(db.Integer)
 
+class mxk_analysis(db.Model):
+    __tablename__ = 'cgk_analysis'
+
+    id=db.Column(db.Integer,primary_key=True)
+    field=db.Column(db.String(255),nullable=False,unique=True)
+    scope=db.Column(db.String(255),nullable=False,unique=True)
+    year=db.Column(db.String(255),nullable=False,unique=True)
+    region_code=db.Column(db.String(255),nullable=False,unique=True)
+    org_code=db.Column(db.String(255),nullable=False,unique=True)
+    profile=db.Column(db.String(255),nullable=False,unique=True)
+    summary=db.Column(db.String(255),nullable=False,unique=True)
+    create_time=db.Column(db.DateTime,nullable=False,unique=True)
+    update_time=db.Column(db.DateTime,nullable=False,unique=True)
+
+
+class mxk_base(db.Model):
+    __tablename__ = 'tjk_indicator_base'
+
+    id=db.Column(db.Integer,primary_key=True)
+    field=db.Column(db.String(255),nullable=False,unique=True)
+    scope=db.Column(db.String(255),nullable=False,unique=True)
+    year=db.Column(db.String(255),nullable=False,unique=True)
+    region_code=db.Column(db.String(255),nullable=False,unique=True)
+    region_name=db.Column(db.String(255),nullable=False,unique=True)
+    indicator_name=db.Column(db.String(255),nullable=False,unique=True)
+    indicator_symbol=db.Column(db.String(255),nullable=False,unique=True)
+    indicator_value=db.Column(db.String(255),nullable=False,unique=True)
+    indicator_unit=db.Column(db.String(255),nullable=False,unique=True)
+    org_id=db.Column(db.String(255),nullable=False,unique=True)
+    org_name=db.Column(db.String(255),nullable=False,unique=True)
+    data_year=db.Column(db.String(255),nullable=False,unique=True)
+    data_desc=db.Column(db.String(255),nullable=False,unique=True)
+    data_source=db.Column(db.String(255),nullable=False,unique=True)
+    source=db.Column(db.String(255),nullable=False,unique=True)
+    way=db.Column(db.String(255),nullable=False,unique=True)
+    create_by=db.Column(db.String(255),nullable=False,unique=True)
+    create_time=db.Column(db.DateTime,nullable=False,unique=True)
+    update_by=db.Column(db.String(255),nullable=False,unique=True)
+    update_time=db.Column(db.DateTime,nullable=False,unique=True)
+
+
+class mxk_indicator_trans(db.Model):
+    __tablename__ = 'mxk_indicator_trans'
+    id=db.Column(db.Integer,primary_key=True)
+    field=db.Column(db.String(255),nullable=False,unique=True)
+    scope=db.Column(db.String(255),nullable=False,unique=True)
+    indicator_name=db.Column(db.String(255),nullable=False,unique=True)
+    indicator_name_trans=db.Column(db.String(255),nullable=False,unique=True)

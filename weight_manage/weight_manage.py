@@ -68,9 +68,12 @@ def dw_indicator():
         header=['indicator','weight']
         ws.append(header)
         for pp in pp_list:
-            row=[pp.indicator_name]
-            ws.append(row)
-        file_name='weight_{}_{}.xlsx'.format(field,scope)
+            if not pp.indicator_name == field:
+                row=[pp.indicator_name]
+                ws.append(row)
+        file_scope=scope.replace('/','')
+        file_field=field.replace('/','')
+        file_name='weight_{}_{}.xlsx'.format(file_field,file_scope)
         wb.save(file_path+file_name)
         response = make_response(send_from_directory(file_path, file_name, as_attachment=True))
         response.headers["Content-Disposition"] = "attachment; filename={}".format(file_path.encode().decode('latin-1'))
@@ -82,7 +85,10 @@ def dw_indicator():
 def weight_status():
     #field=request.args.get('field')
     #scope=request.args.get('scope')
-    
+    page_num=request.args.get('page_num')
+    pp_start=0+(int(page_num)-1)*10
+    pp_end=10+(int(page_num)-1)*10
+
     pp_list=Mxk_indicator_system.query.all()
     weight_sta={}
     for pp in pp_list:
@@ -109,7 +115,8 @@ def weight_status():
         status=weight_sta[field_scope]
         row={'field':field,'scope':scope,'weight_status':status}
         weight_list.append(row)
-    return jsonify(code=200,msg='ok',data=weight_list)
+    total_num=len(weight_list)
+    return jsonify(code=200,msg='ok',data=weight_list[pp_start:pp_end],page_num=page_num,page_size=10,total=total_num)
 
     
 

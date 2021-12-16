@@ -13,9 +13,8 @@ cf = configparser.ConfigParser()
 cf.read("conf.ini")
 mysql_uri = cf.get("mysql", "uri")
 engine=create_engine(mysql_uri)
-data_dict_region=pd.read_sql_table('dict_region',engine)
-data_dict_org=pd.read_sql_table('dict_org',engine)
-data_mxk_indicator_system=pd.read_sql_table('mxk_indicator_system',engine)
+
+
 # In[42]:
 
 
@@ -75,7 +74,9 @@ def nation(data_nation,year,field,scope,user_name):
 #             list_1.append(dict_1)
     
 #     data_nation_df=pd.DataFrame(list_1)
-
+    data_dict_region=pd.read_sql_table('dict_region',engine)
+    data_dict_org=pd.read_sql_table('dict_org',engine)
+    data_mxk_indicator_system=pd.read_sql_table('mxk_indicator_system',engine)
     data_nation_df=public_part(data_nation)
     data_nation_df['values']=np.where(data_nation_df['col_value'].str.contains('[0-9]{1,}'),None,data_nation_df['col_value'])
 
@@ -111,7 +112,9 @@ def org(data_org,data_dict_region,year,field,scope,user_name):
 #             dict_1={'col_name':col_name,'col_value':col_value}
 #             list_2.append(dict_1)
 #     data_org_df=pd.DataFrame(list_2)
-
+    data_dict_region=pd.read_sql_table('dict_region',engine)
+    data_dict_org=pd.read_sql_table('dict_org',engine)
+    data_mxk_indicator_system=pd.read_sql_table('mxk_indicator_system',engine)
     data_org_df=public_part(data_org)
 
     data_org_df['values']=np.where(data_org_df['col_value'].str.contains('^[0-9]{1,}$'),None,data_org_df['col_value'])
@@ -148,8 +151,8 @@ def org(data_org,data_dict_region,year,field,scope,user_name):
 
 
 def input_table(table):
-    # table.to_sql('tjk_indicator_measure_20210809',engine,if_exists='append',index=False)
-    table.to_sql('tjk_indicator_value',engine,if_exists='append',index=False)
+    # table.to_sql('mxk_indicator_result_20210809',engine,if_exists='append',index=False)
+    table.to_sql('tjk_indicator_eva',engine,if_exists='append',index=False)
 
 
 # In[268]:
@@ -277,7 +280,9 @@ def digital_judgment_system_level(level_three,field,scope,xls_columns):
 
 
 def data_verification(path,user_name,arg,year,field,scope):
-    
+    data_dict_region=pd.read_sql_table('dict_region',engine)
+    data_dict_org=pd.read_sql_table('dict_org',engine)
+    data_mxk_indicator_system=pd.read_sql_table('mxk_indicator_system',engine)
     level_three=system_level(data_mxk_indicator_system)
    
     data_read=pd.read_excel(path)

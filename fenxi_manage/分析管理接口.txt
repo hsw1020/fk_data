@@ -1,0 +1,33 @@
+ip 192.168.200.35:9095
+
+1.文本生成
+get /mxk/fenxi_manage/generate?field=媒体力量&scope=周边国家
+
+2.编辑关键指标
+post /mxk/fenxi_manage/edit_profile
+
+data-form
+{
+	field:媒体力量,
+	scope:周边国家,
+	region_code:us,
+	new_profile:xxxxxx
+}
+
+3.编辑总结
+post /mxk/fenxi_manage/edit_summary
+
+{
+	field:媒体力量,
+	scope:周边国家,
+	region_code:us,
+	new_summary:xxxxxx
+}
+
+
+4.详情页
+get /mxk/fenxi_manage/detail?field=媒体力量&scope=周边国家
+
+5.状态列表
+
+get /mxk/fenxi_manage/list?page_num=1
