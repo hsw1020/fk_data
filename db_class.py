@@ -169,3 +169,17 @@ class mxk_indicator_trans(db.Model):
     scope=db.Column(db.String(255),nullable=False,unique=True)
     indicator_name=db.Column(db.String(255),nullable=False,unique=True)
     indicator_name_trans=db.Column(db.String(255),nullable=False,unique=True)
+
+class cgk_report(db.Model):
+    __tablename__ = 'cgk_report'
+    id=db.Column(db.Integer,primary_key=True)
+    field=db.Column(db.String(255),nullable=False,unique=True)
+    scope=db.Column(db.String(255),nullable=False,unique=True)
+    year=db.Column(db.String(255),nullable=False,unique=True)
+    region_code=db.Column(db.String(255),nullable=False,unique=True)
+    org_code=db.Column(db.String(255),nullable=False,unique=True)
+    keywords=db.Column(db.String(255),nullable=False,unique=True)
+    report_name=db.Column(db.String(255),nullable=False,unique=True)
+    path=db.Column(db.String(255),nullable=False,unique=True)
+    create_by=db.Column(db.String(255),nullable=False,unique=True)
+    create_time=db.Column(db.DateTime,nullable=False,unique=True)

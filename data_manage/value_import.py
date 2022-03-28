@@ -259,7 +259,7 @@ def digital_judgment_system_level(level_three,field,scope,xls_columns):
 
     data_tolist=data_.loc[:,'indicator_name'].tolist()
     xls_columns=xls_columns.tolist()[1:]
-    
+    print(set(data_tolist))
     a=list(set(data_tolist).difference(set(xls_columns)))
     #print(a)
     #print('----------------------------')

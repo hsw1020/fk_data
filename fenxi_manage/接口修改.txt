@@ -1,0 +1,13 @@
+分析管理 
+/mxk/fenxi_manage/detail
+变化：
+返回参数 新增 data.military_level_list：["陆军部队", "战区",xxx]
+返回参数 data.data中 每行数据新增 military_level 字段
+
+
+计算管理
+/mxk/calculate_manage/score_list
+变化：
+返回参数 data.data.body_country中每行数据新增 military_level 字段
+返回参数 data.data中每行数据新增 military_level_list 字段
+

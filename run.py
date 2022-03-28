@@ -2,14 +2,16 @@ import configparser
 import model_manage
 from operator import imod
 import os
-
 from flask.helpers import make_response, send_from_directory
 from login_mmm import login_mmm
 from model_manage.model import model_manage
 from data_calculate.calculate_manage import calculate_manage
 from bianzhi_manage.bianzhi import bianzhi_manage
 #
+from report_manage.report_manage import report_manage
 from user_manage.user_manage import user_manage
+from tongji_manage.tongji_manage import tongji_manage
+
 from base_manage.base_manage import base_manage
 from data_manage.data_manage import data_manage
 from weight_manage.weight_manage import weight_manage
@@ -18,7 +20,6 @@ from token_required import login_r
 from flask import g
 from flask import Flask
 import json,time,datetime
-from flask.scaffold import F
 from datetime import datetime, date
 from flask_cors import cross_origin
 import numpy as np
@@ -423,6 +424,39 @@ def edit_indicator():
         update_by_v='user2'
         indicator_system_json['update_time']=updateTime
         indicator_system_json['update_by']=update_by_v
+
+        l1_indicators=indicator_system_json['children']
+        l1_indicators_name=[]
+        l2_indicators_name=[]
+        l3_indicators_name=[]
+        l2_indicators=[]
+        for ll in l1_indicators:
+            l1_indicators_name.append(ll['indicator_name'])
+            if 'children' in ll:
+                childrens=ll['children']
+                for cc in childrens:
+                    l2_indicators.append(cc)
+        l3_indicators=[]
+        for ll in l2_indicators:
+            l2_indicators_name.append(ll['indicator_name'])
+            if 'children' in ll:
+                childrens=ll['children']
+                for cc in childrens:
+                    l3_indicators.append(cc)
+        for ll in l3_indicators:
+            l3_indicators_name.append(ll['indicator_name'])
+        sumary_text_l1=''
+        for l1 in l1_indicators_name:
+            sumary_text_l1+=l1+'、'
+        sumary_text_l1=sumary_text_l1.strip('、')
+        sumary_l1_num=len(l1_indicators_name)
+        sumary_l2_num=len(l2_indicators_name)
+        sumary_l3_num=len(l3_indicators_name)
+
+        sumary_text=f'{field_v}的评估指标，包括{sumary_text_l1}等{sumary_l1_num}个一级指标，{sumary_l2_num}个二级指标，{sumary_l3_num}个三级指标。'
+
+
+        indicator_system_json['summary']=sumary_text
         args=[indicator_system_json]
         json_add=mxk_indicator_json(id=id_old,type=type_old,year=year_old,is_delete=is_delete_old,field=field_v,scope=scope_v,create_time=create_time_v,create_by=create_by_v,update_time=updateTime,update_by=update_by_v,indicator_system=args)  
         db.session.add(json_add)
@@ -492,7 +526,7 @@ def add_indicator():
                     parent_id=None
 
 
-
+    
                 create_by='user1'
                 create_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 updateTime=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -503,8 +537,8 @@ def add_indicator():
                 mxk_indicator_system_1=Mxk_indicator_system(sort=sort_v,create_by=create_by,create_time=create_time,updateTime=updateTime,update_by=update_by,indicator_id=indid,indicator_name=indi_name,field=field_v,scope=scope_v,parentId=parent_id)  
                 db.session.add(mxk_indicator_system_1)
             db.session.commit()
+            
             pp_list=Mxk_indicator_system.query.filter_by(field=args_field,scope=args_scope).all()
-
             json_row=gao_list(pp_list)
 
 
@@ -624,6 +658,53 @@ def add_indicator():
                 mxk_indicator_system_1=Mxk_indicator_system(sort=sort_v,create_by=create_by,create_time=create_time,updateTime=updateTime,update_by=update_by,indicator_id=indid,indicator_name=indi_name,field=field_v,scope=scope_v,parentId=parent_id)  
                 db.session.add(mxk_indicator_system_1)
             db.session.commit()
+
+
+            indicator_l0 =Mxk_indicator_system.query.filter_by(field=args_field,indicator_name=args_field).first()
+            indicator_l0_id=str(indicator_l0.indicator_id)
+            
+            pp_list=Mxk_indicator_system.query.filter_by(field=args_field,scope=args_scope).all()
+            indicator_l1_id=[]
+            indicator_l2_id=[]
+            indicator_l3_id=[]
+            indicator_l1_name=[]
+            indicator_l2_name=[]
+            indicator_l3_name=[]
+            for pp in pp_list:
+                pp_id= str(pp.indicator_id)
+                pp_parent_id=pp.parentId
+                pp_name=pp.indicator_name
+                if pp_parent_id==indicator_l0_id:
+                    indicator_l1_id.append(pp_id)
+                    indicator_l1_name.append(pp_name)
+            for pp in pp_list:
+                pp_id= str(pp.indicator_id)
+                pp_parent_id=pp.parentId
+                pp_name=pp.indicator_name
+                if pp_parent_id in indicator_l1_id:
+                    indicator_l2_id.append(pp_id)
+                    indicator_l2_name.append(pp_name)
+            for pp in pp_list:
+                pp_id= str(pp.indicator_id)
+                pp_parent_id=pp.parentId
+                pp_name=pp.indicator_name
+                if pp_parent_id in indicator_l2_id:
+                    indicator_l3_name.append(pp_name)
+
+                sumary_text_l1=''
+                for l1 in indicator_l1_name:
+                    sumary_text_l1+=l1+'、'
+                sumary_text_l1=sumary_text_l1.strip('、')
+                sumary_l1_num=len(indicator_l1_name)
+                sumary_l2_num=len(indicator_l2_name)
+                sumary_l3_num=len(indicator_l3_name)
+
+                sumary_text=f'{args_field}的评估指标，包括{sumary_text_l1}等{sumary_l1_num}个一级指标，{sumary_l2_num}个二级指标，{sumary_l3_num}个三级指标。'
+            
+            indicator_l0 =Mxk_indicator_system.query.filter_by(field=args_field,indicator_name=args_field).first()
+            indicator_l0.summary=sumary_text
+            db.session.commit()
+
             pp_list=Mxk_indicator_system.query.filter_by(field=args_field,scope=args_scope).all()
 
             json_row=gao_list(pp_list)
@@ -701,5 +782,7 @@ if __name__ == '__main__':
     app.register_blueprint(weight_manage,url_prefix='/mxk/weight_manage')
     app.register_blueprint(fenxi_manage,url_prefix='/mxk/fenxi_manage')
     app.register_blueprint(base_manage,url_prefix='/mxk/base_manage')
+    app.register_blueprint(report_manage,url_prefix='/mxk/report_manage')
+    app.register_blueprint(tongji_manage,url_prefix='/mxk/tongji_manage')
     app.run(port=9095,host='0.0.0.0')
  

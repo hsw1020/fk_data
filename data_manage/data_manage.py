@@ -205,8 +205,9 @@ def list_detail():
     return jsonify(data)
 @data_manage.route('/list')
 def list():
-    #field_v = request.args.get('field')
-    #scope_v = request.args.get('scope')
+    field_select = request.args.get('field_select')
+    scope_select = request.args.get('scope_select')
+    year_select = request.args.get('year_select')
     page_num=request.args.get('page_num')
     pp_start=0+(int(page_num)-1)*10
     pp_end=10+(int(page_num)-1)*10
@@ -216,11 +217,36 @@ def list():
         }
     fs_list=[]
     data_list=[]
-    pp_list=mxk_value.query.order_by(mxk_value.create_time.asc()).all()
+    field_list=[]
+    scope_list=[]
+    year_list=[]
+
+    if field_select and scope_select and year_select:
+        pp_list=mxk_value.query.filter_by(field=field_select,scope=scope_select,year=year_select).order_by(mxk_value.create_time.asc()).all()
+    elif field_select and scope_select and not year_select:
+        pp_list=mxk_value.query.filter_by(field=field_select,scope=scope_select).order_by(mxk_value.create_time.asc()).all()
+    elif  scope_select and year_select and not field_select:
+        pp_list=mxk_value.query.filter_by(scope=scope_select,year=year_select).order_by(mxk_value.create_time.asc()).all()
+    elif  scope_select and not year_select and not field_select:
+        pp_list=mxk_value.query.filter_by(scope=scope_select).order_by(mxk_value.create_time.asc()).all()
+    elif  not scope_select and year_select and field_select:
+        pp_list=mxk_value.query.filter_by(field=field_select,year=year_select).order_by(mxk_value.create_time.asc()).all()
+    elif  not scope_select and  year_select and not field_select:
+        pp_list=mxk_value.query.filter_by(year=year_select).order_by(mxk_value.create_time.asc()).all()
+    elif  not scope_select and not year_select and  field_select:
+        pp_list=mxk_value.query.filter_by(field=field_select).order_by(mxk_value.create_time.asc()).all()
+    elif  not scope_select and not year_select and  not field_select:
+        pp_list=mxk_value.query.order_by(mxk_value.create_time.asc()).all()
     for pp in pp_list:
         field_v=pp.field
         scope_v=pp.scope
         year_v=pp.year
+        if not {'field_name':field_v} in field_list:
+            field_list.append({'field_name':field_v})
+        if not {'scope_name':scope_v} in scope_list:
+            scope_list.append({'scope_name':scope_v})
+        if not {'year':year_v} in year_list:
+            year_list.append({'year':year_v})
         fs_year=field_v+scope_v+year_v
         if fs_year not in fs_list:
             data_list.append(pp)
@@ -245,6 +271,12 @@ def list():
     json_row['total']=total_rows
     json_row['pagesize']=10
     json_row['page_num']=page_num
+    heaers={
+        'field_list':field_list,
+        'scope_list':scope_list,
+        'year_list':year_list
+    }
+    json_row['heaers'] =heaers
     return jsonify(json_row)
 
 

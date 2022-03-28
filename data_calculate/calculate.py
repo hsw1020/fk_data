@@ -366,7 +366,7 @@ def level_1_calculation(field_,scope_):
     
     level_3_data_=level_3_data.loc[:,['field_x','scope','year','eva_level','region_code','indicator_id_1',
                     'indicator_name_1','score','weight_2','step_1']]
-    level_3_data_.drop_duplicates(inplace=True)
+    ##level_3_data_.drop_duplicates(inplace=True)
     
     level_1=pd.DataFrame()
     level_1['level_2_sum']=level_3_data_.groupby(['field_x','scope','year','eva_level','region_code','indicator_id_1',
@@ -383,6 +383,10 @@ def level_1_calculation(field_,scope_):
     level_1=level_1.loc[:,['field_x','scope','year','eva_level','region_code','indicator_id_1','indicator_name_1','indicator_value_0_1']]
     data_1=level_1.rename(columns={'field_x':'field','indicator_name_1':'indicator_name','indicator_id_1':'indicator_id',
                                 'indicator_value_0_1':'score'})
+    print(data_1.values[0])
+    print(data_1.values[1])
+    print(data_1.values[2])
+    print(data_1.values[3])
     return data_1
 
 
@@ -404,8 +408,13 @@ def level_root_calculation(field_,scope_):
     
     level_root_data_=level_root_data.loc[:,['field_x','scope','year','eva_level','region_code','indicator_id_0',
                     'indicator_name_0','score','weight_1','step_0']]
-    level_root_data_.drop_duplicates(inplace=True)
     
+    ##level_root_data_.drop_duplicates(inplace=True)
+    test_list=level_root_data.values
+    for tt in test_list:
+        region=tt[4]
+        score=tt[-1]
+        print([region,score])
     level_0=pd.DataFrame()
     
     level_0['level_1_sum']=level_root_data_.groupby(['field_x','scope','year','eva_level','region_code','indicator_id_0',
@@ -413,7 +422,7 @@ def level_root_calculation(field_,scope_):
     
     level_0=level_0.reset_index()
     level_0['score']=np.where(level_0['level_1_sum']==0,0.00001,level_0['level_1_sum'])
-    
+
     level_0['indicator_value_0_1']=level_0.groupby(['field_x','scope','year','eva_level',
                                                 'indicator_id_0','indicator_name_0'
                                                 ])['score'].apply(lambda x: (x - np.min(x)) / (np.max(x) - np.min(x)))

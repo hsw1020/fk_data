@@ -1,9 +1,12 @@
 import configparser
+from datetime import MAXYEAR
 import json,time,os
 
 from logging import exception
+from typing import cast
 from flask import Blueprint
 from flask.helpers import make_response, send_from_directory
+from numpy import integer
 from db_class import *
 from flask import render_template,request,jsonify
 fenxi_manage = Blueprint('fenxi_manage',__name__)
@@ -33,16 +36,24 @@ def generate():
     indicator_name_list=[x.indicator_name for x in pp_list]
     indicator_name_list.append(field_v)
     pp_list=mxk_measure.query.filter_by(field=field_v,scope=scope_v).all()
+    max_year=mxk_measure.query.order_by(db.cast(mxk_measure.year,db.Integer).desc()).first().year
+    max_field_year=mxk_measure.query.filter_by(field=field_v,scope=scope_v).order_by(db.cast(mxk_measure.year,db.Integer).desc()).first().year
+    if not max_year == max_field_year:
+        return jsonify(code=200,msg='文本生成失败，没有{}年的数据！'.format(max_year))
+    last_year=str(int(max_year)-1)
     data_dict={}
     headers=[]
     update_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     zhengti_paiming={}
     try:
+        year_list=[]
         for pp in pp_list:
             year=pp.year
+            if not year in year_list:
+                year_list.append(year)
             indicator_name=pp.indicator_name
 
-            if indicator_name not in indicator_name_list or year not in ['2021','2020']:
+            if indicator_name not in indicator_name_list or year not in [max_year,last_year]:
                 continue
             if not indicator_name in headers:
                 headers.append(indicator_name)
@@ -62,24 +73,26 @@ def generate():
             data_dict[region_code][year][indicator_name]={'score':score,'rank':rank_}
 
         vs_data=[]
+        
+        region_info_dict={}
         for dd in data_dict:
 
             
             region_code=dd
             dd_dict={'region_code':region_code,'indicator_list':[]}
 
-            if not '2021' in data_dict[dd]:
+            if not max_year in data_dict[dd]:
                 continue
             
             
 
 
 
-            region_info_dict={}
-            if '2020' in  data_dict[dd]:
+            
+            if last_year in  data_dict[dd]:
                 if_2020=1
-                data_2021=data_dict[dd]['2021']
-                data_2020=data_dict[dd]['2020']
+                data_2021=data_dict[dd][max_year]
+                data_2020=data_dict[dd][last_year]
                 
                 for head in headers:
 
@@ -236,7 +249,7 @@ def generate():
                     region_info_dict[region_code]['summary']=str_0+vs_zongjie_str
             else:
                 if_2020=0
-                data_2021=data_dict[dd]['2021']
+                data_2021=data_dict[dd][max_year]
                 row_str=''
                 for head in headers:
 
@@ -244,16 +257,31 @@ def generate():
                     rank_2021=data_2021[head]['rank']
                     row_str+='在{}方面排名第{}，得分{}；'.format(head,rank_2021,score_2021)
                 row_str=row_str.strip('；')+'。'
-                mxk_analysis_add=mxk_analysis(
-                    field=field_v,
-                    scope=scope_v,
-                    region_code=region_code,
-                    profile=row_str,
-                    summary=row_str,
-                    year=year,
-                    update_time=update_time,
-                    create_time=update_time     
-                )
+                if '_' in region_code:
+                    org_code=region_code.split('_')[0]
+                    region_code=region_code.split('_')[1]
+                    mxk_analysis_add=mxk_analysis(
+                        field=field_v,
+                        scope=scope_v,
+                        org_code=org_code,
+                        region_code=region_code,
+                        profile=row_str,
+                        summary=row_str,
+                        year=year,
+                        update_time=update_time,
+                        create_time=update_time     
+                    )
+                else:
+                    mxk_analysis_add=mxk_analysis(
+                        field=field_v,
+                        scope=scope_v,
+                        region_code=region_code,
+                        profile=row_str,
+                        summary=row_str,
+                        year=year,
+                        update_time=update_time,
+                        create_time=update_time     
+                    )
                 db.session.add(mxk_analysis_add)
                 
         #if if_2020: 
@@ -262,7 +290,7 @@ def generate():
             region_code=row
             profile=region_info_dict[region_code]['profile']
             summary=region_info_dict[region_code]['summary']
-            year='2021'
+            year=max_year
             if '_' in region_code:
                 org_code=region_code.split('_')[0]
                 region_code=region_code.split('_')[1]
@@ -344,6 +372,18 @@ def list():
 def detail():
     field_v = request.args.get('field')
     scope_v = request.args.get('scope')
+    org_code2name={}
+    
+    pp_list=mxk_org.query.all()
+    military_level_list=[]
+    for pp in pp_list:
+        org_name=pp.military_name_cn
+        military_level=pp.military_level
+        if not military_level in military_level_list:
+            military_level_list.append(military_level)
+        org_code=pp.id
+        org_code2name[str(org_code)]=[org_name,military_level]
+
     pp_list=mxk_analysis.query.filter_by(
         field=field_v,
         scope=scope_v
@@ -360,13 +400,14 @@ def detail():
         ).first().region_name
         
         if org_code:
-            org_name=mxk_measure.query.filter_by(
-                org_id=org_code
-            ).first().org_name
+            org_name=org_code2name[org_code][0]
+            military_level=org_code2name[org_code][1]
             #region_code=org_code
         else:
             org_name=''
             org_code=''
+            military_level=''
+            military_level_list=[]
         row_dict={
             'region_name':region_name,
             'region_code':region_code,
@@ -374,9 +415,10 @@ def detail():
             'org_code':org_code,
             'profile':profile,
             'summary':summary, #asd
+            'military_level':military_level
         }
         data_list.append(row_dict)
-    return jsonify(code=200,msg='ok',data=data_list)
+    return jsonify(code=200,msg='ok',data=data_list,military_level_list=military_level_list)
 @fenxi_manage.route('/edit_profile',methods=['POST'])
 def edit_profile():
     try:

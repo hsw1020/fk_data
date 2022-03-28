@@ -1,1 +1,2 @@
-print(float(0))
+asd={'1':1,'2':2,'3':3}
+print(asd[0])

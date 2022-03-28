@@ -4,7 +4,7 @@ from logging import exception
 from flask import Blueprint
 from db_class import *
 
-from .calculate import get_org
+from .calculate_wsh import get_org
 from flask import render_template,request,jsonify
 calculate_manage = Blueprint('calculate_manage',__name__)
 
@@ -16,7 +16,34 @@ conf_dir=root_dir+"/conf.ini"
 cf.read(conf_dir)
 file_dir=cf.get("mysql", "file_path")
 
-
+@calculate_manage.route('/military_level_list')
+def military_level_list():
+    field_v = request.args.get('field')
+    scope_v = request.args.get('scope')
+    org_code2name={}
+    
+    pp_list=mxk_org.query.all()
+    
+    for pp in pp_list:
+        org_name=pp.military_name_cn
+        military_level=pp.military_level
+        org_code=pp.id
+        org_code2name[str(org_code)]=[org_name,military_level]
+    pp_list=mxk_measure.query.filter_by(field=field_v,scope=scope_v).all()
+    military_level_list=[]
+    row_list=[]
+    for pp in pp_list:
+        
+        if pp.org_id:
+            org_code=str(pp.org_id)
+            military_level=org_code2name[org_code][1]
+            
+            if not military_level in military_level_list:
+                military_level_list.append(military_level)
+    for military_level in military_level_list:
+        row_list.append({'military_level':military_level})
+    row={'military_level_list':row_list}        
+    return jsonify(code=200,msg='ok',data=row)         
 @calculate_manage.route('/score_list')
 def score_list():
 
@@ -29,10 +56,19 @@ def score_list():
         country_code2name[unique_code]=region_name
         fan_country_dict[region_name]=unique_code
 
-
+    org_code2name={}
+    
+    pp_list=mxk_org.query.all()
+    
+    for pp in pp_list:
+        org_name=pp.military_name_cn
+        military_level=pp.military_level
+        org_code=pp.id
+        org_code2name[str(org_code)]=[org_name,military_level]
 
     field_v = request.args.get('field')
     scope_v = request.args.get('scope')
+
     pp_list=mxk_measure.query.filter_by(field=field_v,scope=scope_v,indicator_name=field_v).all()
     country_dict={}
     header_list=[]
@@ -41,16 +77,21 @@ def score_list():
         year = pp.year
         header_list.append(year)
         region_code=pp.region_code
-        region_name=country_code2name[region_code]
-        org_name=pp.org_name
-        if org_name:
+        
+
+        org_id=pp.org_id
+        if org_id:
+            org_name=org_code2name[org_id][0]
+            military_level=org_code2name[org_id][1]
             region_name=org_name
+        else:
+            region_name=country_code2name[region_code]
+            military_level=''
         #indicator_name=pp.indicator_name
         score=pp.score
         if not region_name in country_dict:
             
-
-            country_dict[region_name]=[{'nation':region_name}]
+            country_dict[region_name]=[{'nation':region_name,'military_level':military_level}]
         score_year={
             'year':year,
             'score':score
@@ -67,7 +108,7 @@ def score_list():
         data_list_new.append(dd)
     data_out={
         'header_year':header_list,
-        'body_country':data_list_new
+        'body_country':data_list_new,
     }
     return jsonify(code=200,msg='ok',data=data_out)
         
@@ -176,7 +217,7 @@ def calculate():
             return jsonify(code=400,msg='评价主题为{}，评价对象为{}中{}的权重存在空值，无法计算！'.format(field_v,scope_v,indicator_name))
 
     try:
-        get_org('mxk_indicator_result',field_v,scope_v)
+        get_org(field_v,scope_v)
         return jsonify(code=200,msg='calculate done!')
     except Exception as e:
         return jsonify(code=400,msg=str(e))
@@ -206,7 +247,7 @@ def calculate_all():
                 if scope_v in pp_value_field_list[field_v]:
                     return jsonify(code=400,msg='评价主题为{}，评价对象为{}的指标体系权重存在空值，无法计算！'.format(field_v,scope_v))
     try:
-        get_org('mxk_indicator_result','all','all')
+        get_org('all','all')
         return jsonify(code=200,msg='calculate done!')
     except Exception as e:
         return jsonify(code=400,msg=str(e))
