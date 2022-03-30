@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint,session
 from db_class import *
 from flask import render_template,request,jsonify
 login_mmm = Blueprint('login_mmm',__name__)
@@ -45,13 +45,13 @@ def login():
             'status':'未找到该用户'
         }
         code_fan=401
-    else:    
+    else:
         if obj.verify_password(password):
-            token = create_token(username)
-    
+            session['login_in']=True
+            session['user']=username
+            session.permanent=True
             result={
-                'status':'登录成功',
-                'token':token
+                'status':'登录成功'
             }
             code_fan=200
         else:

@@ -51,14 +51,13 @@ def Response_headers(content):
     resp.headers['Access-Control-Allow-Origin'] = '*'
     return resp
 
-import pymysql
-pymysql.install_as_MySQLdb()
 import excel_2_sql0
 cf = configparser.ConfigParser()
 cf.read("conf.ini")
 mysql_uri = cf.get("mysql", "uri")
 file_dir=cf.get("mysql", "file_path")
 app = Flask(__name__,template_folder='templates',static_folder="static")
+app.permanent_session_lifetime= datetime.timedelta(seconds=60*120)
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.json_encoder = CustomJSONEncoder
 app.config['SQLALCHEMY_DATABASE_URI'] = mysql_uri
