@@ -47,11 +47,11 @@ def login():
         code_fan=401
     else:    
         if obj.verify_password(password):
-            token = create_token(username)
-    
+            session.permanent=True
+            session['login_in']=True
+            print(session.get('login_in'))
             result={
                 'status':'登录成功',
-                'token':token
             }
             code_fan=200
         else:
