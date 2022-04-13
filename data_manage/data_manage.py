@@ -67,6 +67,7 @@ def import_field_list():
                 year_p=p.year
                 if not year_p in year_list:
                     year_list.append(year_p)
+            sorted(year_list,reverse=True)
             scope_dict={
                 'scope_name':scope,
                 'years_exist':year_list
@@ -247,7 +248,7 @@ def list():
             scope_list.append({'scope_name':scope_v})
         if not {'year':year_v} in year_list:
             year_list.append({'year':year_v})
-        fs_year=field_v+scope_v+year_v
+        fs_year=field_v+scope_v+str(year_v)
         if fs_year not in fs_list:
             data_list.append(pp)
             fs_list.append(fs_year)
@@ -257,6 +258,7 @@ def list():
         scope_v=data.scope
         create_by_v=data.create_by
         create_time=data.create_time
+        create_time=create_time.strftime('%Y-%m-%d %H:%M:%S') 
         year_v=data.year
         row={
             #'id':id_v,
@@ -271,6 +273,8 @@ def list():
     json_row['total']=total_rows
     json_row['pagesize']=10
     json_row['page_num']=page_num
+    
+    year_list.sort(key=lambda s: int(s["year"]),reverse=True)
     heaers={
         'field_list':field_list,
         'scope_list':scope_list,

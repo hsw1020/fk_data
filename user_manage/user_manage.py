@@ -40,7 +40,7 @@ def list():
             'gender':gender,
             'department':department,
             'user_role':user_role,
-            'create_time':create_time
+            'create_time':create_time.strftime('%Y-%m-%d %H:%M:%S') 
         }
         user_list.append(row_dict)
     total_user=len(user_list)

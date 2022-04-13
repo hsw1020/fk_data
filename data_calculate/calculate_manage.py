@@ -138,11 +138,12 @@ def list1():
         scope_v=data.scope
         pp=mxk_measure.query.filter_by(field=field_v,scope=scope_v).order_by(mxk_measure.create_time.desc()).first()
         if pp:
-            cal_time=pp.create_time
+            cal_time=pp.create_time.strftime('%Y-%m-%d %H:%M:%S') 
+
         else:
             cal_time=None
         update_by_v=data.update_by
-        update_time_v=data.update_time
+        update_time_v=data.update_time.strftime('%Y-%m-%d %H:%M:%S') 
         
         row={
             #'id':id_v,

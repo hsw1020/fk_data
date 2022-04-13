@@ -1,6 +1,6 @@
-from flask_sqlalchemy import SQLAlchemy
+
 from passlib.apps import custom_app_context as pwd_context
-db=SQLAlchemy()
+from extensions import db
 class Mxk_indicator_system(db.Model):
     #__abstract__ = True
     __tablename__ = 'mxk_indicator_system'

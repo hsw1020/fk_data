@@ -1,4 +1,5 @@
-from flask import Blueprint
+import json
+from flask import Blueprint,make_response
 from db_class import *
 from flask import render_template,request,jsonify
 login_mmm = Blueprint('login_mmm',__name__)
@@ -39,6 +40,7 @@ def register():
 def login():
     username = request.form.get('username')
     password = request.form.get('password')
+    token=''
     obj = Users.query.filter_by(name=username).first()
     if not obj:
         result={
@@ -47,9 +49,10 @@ def login():
         code_fan=401
     else:    
         if obj.verify_password(password):
-            session.permanent=True
-            session['login_in']=True
-            print(session.get('login_in'))
+            s = Serializer(current_app.config["SECRET_KEY"],expires_in=36000)
+            token = s.dumps({"id":username}).decode("ascii")
+
+            
             result={
                 'status':'登录成功',
             }
@@ -59,4 +62,12 @@ def login():
                 'status':'密码错误'
             }
             code_fan=402
-    return jsonify(code=code_fan,msg=result)
+        data={
+            'code':code_fan,
+            'msg':result
+        }
+    
+    res=make_response(json.dumps(data))
+    res.set_cookie('x_gorgan',token)
+    res.mimetype='application/json'
+    return res

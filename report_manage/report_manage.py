@@ -177,7 +177,7 @@ def list1():
         report_name=pp.report_name
         path=pp.path
         create_by=pp.create_by
-        create_time=pp.create_time
+        create_time=pp.create_time.strftime('%Y-%m-%d %H:%M:%S') 
        
    
         
@@ -193,7 +193,7 @@ def list1():
             'report_name_no':pp.report_name.split('.')[0],
             'path':pp.path,
             'create_by':pp.create_by,
-            'create_time':pp.create_time
+            'create_time':pp.create_time.strftime('%Y-%m-%d %H:%M:%S') 
         }
         data_list.append(row)
     page_total=len(data_list)
