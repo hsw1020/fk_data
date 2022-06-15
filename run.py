@@ -36,7 +36,8 @@ from flask import Response
 
 
 
-from Utils.excel_2_sql0  import dtest,gao
+from Utils.excel_2_sql0  import gao
+
 cf = configparser.ConfigParser()
 cf.read("conf.ini")
 mysql_uri = cf.get("mysql", "uri")
@@ -293,7 +294,9 @@ def edit_indicator():
 #新建指标
 @app.route('/mxk/indicator/add/', methods=['POST','GET'])
 def add_indicator():
+    from Utils.excel_2_sql0  import dtest
     if request.method=='GET':
+        
         field_v = request.args.get('field')
         scope_v = request.args.get('scope')
         create_by='user1'
@@ -318,7 +321,9 @@ def add_indicator():
             #返回结果给前端
             return "The old data exists"
         try:
+            print(file_path)
             dtest=dtest(file_path)
+            print(dtest)
             if len(dtest)>0:
                 sta='出现重复指标项：{}'.format(dtest)
                 return jsonify(code=401,msg=sta) 
@@ -326,8 +331,8 @@ def add_indicator():
             if len(data_list)==0:
                 sta='file err!'
                 return jsonify(code=400,msg=sta) 
-        except:
-            sta='file err!'
+        except Exception as e:
+            sta=str(e)
             return jsonify(code=400,msg=sta) 
         dd0=data_list[0]
         scope0=dd0[4]

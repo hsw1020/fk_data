@@ -126,8 +126,8 @@ def data_input(data):
 # In[146]:
 def dtest(path):
     data=pd.read_excel(path)
-    dtest=level_test(data)
-    return dtest
+    dtest1=level_test(data)
+    return dtest1
 
 
 
